@@ -1,7 +1,8 @@
 mod assets;
 mod camera;
 mod constants;
-mod map;
+pub mod map;
+mod settings;
 mod states;
 
 use bevy::prelude::*;
@@ -9,6 +10,7 @@ use bevy::prelude::*;
 use crate::core::camera::{move_camera, move_camera_keyboard, reset_camera, setup_camera};
 use crate::core::constants::WATER_COLOR;
 use crate::core::map::systems::draw_map;
+use crate::core::settings::Settings;
 use crate::core::states::{AppState, AudioState, GameState};
 
 pub struct GamePlugin;
@@ -28,6 +30,7 @@ impl Plugin for GamePlugin {
             .init_state::<AudioState>()
             // Resources
             .insert_resource(ClearColor(WATER_COLOR))
+            .init_resource::<Settings>()
             // Sets
             .configure_sets(First, InGameSet.run_if(in_state(AppState::Game)))
             .configure_sets(PreUpdate, InGameSet.run_if(in_state(AppState::Game)))

@@ -57,11 +57,11 @@ impl FromWorld for WorldAssets {
             ("medium", assets.load("fonts/FiraMono-Medium.ttf")),
         ]);
 
-        let mut images: HashMap<&'static str, Handle<Image>> = HashMap::from([
+        let images: HashMap<&'static str, Handle<Image>> = HashMap::from([
             // Icons
             ("sword", assets.load("images/icons/sword.png")),
             // Map
-            ("tiles1", assets.load("images/map/tiles1.png")),
+            ("tiles0", assets.load("images/map/tiles0.png")),
             ("foam", assets.load("images/map/foam.png")),
         ]);
 
