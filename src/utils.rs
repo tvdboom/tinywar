@@ -5,10 +5,18 @@ use std::time::Duration;
 use regex::Regex;
 
 /// Get the local IP address
+#[cfg(not(target_arch = "wasm32"))]
 pub fn get_local_ip() -> IpAddr {
-    let socket = UdpSocket::bind("0.0.0.0:0").ok().expect("Socket not found.");
-    socket.connect("8.8.8.8:80").expect("Failed to connect to socket."); // Doesn't send data
-    socket.local_addr().map(|addr| addr.ip()).unwrap()
+    let socket = UdpSocket::bind("0.0.0.0:0").expect("Socket not found.");
+
+    socket.connect("8.8.8.8:80").expect("Failed to connect to socket.");
+    socket.local_addr().ok().map(|addr| addr.ip()).unwrap()
+}
+
+#[cfg(target_arch = "wasm32")]
+pub fn get_local_ip() -> IpAddr {
+    // WebAssembly in browsers cannot access local network interfaces
+    "127.0.0.1".parse().unwrap()
 }
 
 /// Scale a Duration by a factor

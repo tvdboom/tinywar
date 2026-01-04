@@ -4,13 +4,13 @@ use strum_macros::EnumIter;
 
 #[derive(States, EnumIter, Debug, Clone, Copy, Eq, PartialEq, Hash, Default)]
 pub enum AppState {
+    #[default]
     MainMenu,
     SinglePlayerMenu,
     MultiPlayerMenu,
     Lobby,
     ConnectedLobby,
     Settings,
-    #[default]
     Game,
 }
 

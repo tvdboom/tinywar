@@ -17,3 +17,5 @@ pub const LERP_FACTOR: f32 = 0.05;
 
 /// Map
 pub const WATER_COLOR: Color = Color::srgb_u8(71, 171, 169);
+pub const MAP_Z: f32 = 0.;
+pub const BUILDINGS_Z: f32 = 1.;

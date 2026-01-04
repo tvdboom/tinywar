@@ -2,8 +2,9 @@ use crate::core::map::map::MapSize;
 use crate::core::states::AudioState;
 use bevy::prelude::*;
 use serde::{Deserialize, Serialize};
+use strum_macros::EnumIter;
 
-#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
+#[derive(EnumIter, Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 pub enum PlayerColor {
     Black,
     Blue,

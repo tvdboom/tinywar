@@ -27,6 +27,7 @@ pub const TITLE: &str = "TinyWar";
 static LOG_FILE: Mutex<Option<File>> = Mutex::new(None);
 
 fn main() {
+    #[cfg(not(debug_assertions))]
     init_panic_logger();
 
     let mut app = App::new();

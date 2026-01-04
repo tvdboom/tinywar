@@ -2,6 +2,7 @@ use crate::core::constants::{LERP_FACTOR, MAX_ZOOM, MIN_ZOOM, ZOOM_FACTOR};
 use bevy::input::mouse::{MouseMotion, MouseWheel};
 use bevy::prelude::*;
 use bevy::window::{CursorIcon, SystemCursorIcon};
+use bevy_ecs_tilemap::prelude::*;
 
 #[derive(Component)]
 pub struct MainCamera;
@@ -25,6 +26,7 @@ pub fn setup_camera(mut commands: Commands) {
 
 pub fn move_camera(
     mut commands: Commands,
+    map: Query<(&TilemapSize, &TilemapGridSize)>,
     camera_q: Single<
         (&Camera, &GlobalTransform, &mut Transform, &mut Projection),
         With<MainCamera>,
@@ -84,17 +86,22 @@ pub fn move_camera(
     let view_size = projection.area.max - projection.area.min;
 
     // Clamp camera position within bounds
-    // position = position.lerp(
-    //     clamp_to_rect(
-    //         position,
-    //         view_size,
-    //         Rect {
-    //             min: map.rect.min * 1.8,
-    //             max: map.rect.max * 1.8,
-    //         },
-    //     ),
-    //     LERP_FACTOR,
-    // );
+    if let Some((size, grid)) = map.iter().next() {
+        let width = size.x as f32 * grid.x;
+        let height = size.y as f32 * grid.y;
+
+        position = position.lerp(
+            clamp_to_rect(
+                position,
+                view_size,
+                Rect {
+                    min: Vec2::new(-width * 0.5, -height * 0.5) * 1.8,
+                    max: Vec2::new(width * 0.5, height * 0.5) * 1.8,
+                },
+            ),
+            LERP_FACTOR,
+        );
+    }
 
     camera_t.translation = position.extend(camera_t.translation.z);
 }
@@ -123,14 +130,5 @@ pub fn move_camera_keyboard(
     }
     if keyboard.pressed(KeyCode::KeyS) {
         camera_t.translation.y -= transform;
-    }
-}
-
-pub fn reset_camera(mut camera_q: Query<(&mut Transform, &mut Projection), With<MainCamera>>) {
-    let (mut camera_t, mut projection) = camera_q.single_mut().unwrap();
-    camera_t.translation = Vec3::new(0., 0., 1.);
-
-    if let Projection::Orthographic(projection) = &mut *projection {
-        projection.scale = 1.;
     }
 }

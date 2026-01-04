@@ -1,8 +1,12 @@
 use std::collections::HashMap;
 
+use crate::core::settings::PlayerColor;
+use crate::core::units::buildings::Building;
+use crate::utils::NameFromEnum;
 use bevy::asset::AssetServer;
 use bevy::prelude::*;
 use bevy_kira_audio::AudioSource;
+use strum::IntoEnumIterator;
 
 #[derive(Clone)]
 pub struct TextureInfo {
@@ -57,13 +61,34 @@ impl FromWorld for WorldAssets {
             ("medium", assets.load("fonts/FiraMono-Medium.ttf")),
         ]);
 
-        let images: HashMap<&'static str, Handle<Image>> = HashMap::from([
+        let mut images: HashMap<&'static str, Handle<Image>> = HashMap::from([
             // Icons
-            ("sword", assets.load("images/icons/sword.png")),
+            ("mute", assets.load("images/icons/mute.png")),
+            ("no-music", assets.load("images/icons/no-music.png")),
+            ("sound", assets.load("images/icons/sound.png")),
+            // Background
+            ("bg", assets.load("images/bg/bg.png")),
             // Map
             ("tiles0", assets.load("images/map/tiles0.png")),
             ("foam", assets.load("images/map/foam.png")),
         ]);
+
+        for color in PlayerColor::iter() {
+            for building in Building::iter() {
+                let name =
+                    Box::leak(Box::new(format!("{}-{}", color.to_name(), building.to_name())))
+                        .as_str();
+
+                images.insert(
+                    &name,
+                    assets.load(&format!(
+                        "images/buildings/{}/{}.png",
+                        color.to_name(),
+                        building.to_name()
+                    )),
+                );
+            }
+        }
 
         let mut texture = world.get_resource_mut::<Assets<TextureAtlasLayout>>().unwrap();
 
