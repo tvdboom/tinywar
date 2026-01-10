@@ -76,10 +76,7 @@ pub fn queue_resolve(
             // Spawn units randomly with inverse probability to their spawning time
             let units: Vec<UnitName> = UnitName::iter().collect();
 
-            let weights: Vec<f64> = units
-                .iter()
-                .map(|u| 1.0 / u.spawn_duration() as f64)
-                .collect();
+            let weights: Vec<f64> = units.iter().map(|u| 1.0 / u.spawn_duration() as f64).collect();
 
             let dist = WeightedIndex::new(&weights).unwrap();
             let unit = units[dist.sample(&mut rng())];

@@ -1,4 +1,5 @@
 use bevy::color::Color;
+use bevy::prelude::Vec2;
 
 /// Menu
 pub const SUBTITLE_TEXT_SIZE: f32 = 10.;
@@ -27,3 +28,7 @@ pub const UNITS_Z: f32 = 2.;
 pub const MAX_QUEUE_LENGTH: usize = 12;
 pub const MIN_GAME_SPEED: f32 = 0.25;
 pub const MAX_GAME_SPEED: f32 = 16.;
+pub const FRAME_RATE: u64 = 100;
+
+/// Units
+pub const HEALTH_BAR_SIZE: Vec2 = Vec2::new(76.8, 15.4);

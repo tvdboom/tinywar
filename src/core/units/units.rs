@@ -55,6 +55,15 @@ impl UnitName {
             },
         }
     }
+
+    pub fn health(&self) -> f32 {
+        match self {
+            UnitName::Warrior => 150.,
+            UnitName::Lancer => 100.,
+            UnitName::Archer => 60.,
+            UnitName::Monk => 40.,
+        }
+    }
 }
 
 #[derive(EnumIter, Clone, Copy, Debug, Default, Serialize, Deserialize)]
@@ -68,14 +77,16 @@ pub struct Unit {
     pub name: UnitName,
     pub color: PlayerColor,
     pub action: Action,
+    pub health: f32,
 }
 
 impl Unit {
-    pub fn new(name: UnitName, color: PlayerColor, action: Action) -> Self {
+    pub fn new(name: UnitName, color: PlayerColor) -> Self {
         Unit {
             name,
             color,
-            action,
+            action: Action::default(),
+            health: name.health(),
         }
     }
 }

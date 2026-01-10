@@ -1,5 +1,5 @@
 use crate::core::assets::WorldAssets;
-use crate::core::constants::{BUILDINGS_Z, UNITS_Z};
+use crate::core::constants::{BUILDINGS_Z, FRAME_RATE, HEALTH_BAR_SIZE, UNITS_Z};
 use crate::core::map::systems::MapCmp;
 use crate::core::map::utils::SpriteFrameLens;
 use crate::core::player::Players;
@@ -103,8 +103,6 @@ pub fn spawn_unit_message(
         if let Some((base_t, _)) =
             building_q.iter().find(|(_, b)| b.color == player.color && b.is_base)
         {
-            let bar_size = 192.;
-
             commands.spawn((
                 Sprite {
                     image: texture.image,
@@ -124,25 +122,25 @@ pub fn spawn_unit_message(
                 TweenAnim::new(
                     Tween::new(
                         EaseFunction::Linear,
-                        Duration::from_millis(100 * msg.unit.frames(action) as u64),
+                        Duration::from_millis(FRAME_RATE * msg.unit.frames(action) as u64),
                         SpriteFrameLens(texture.last_index),
                     )
                     .with_repeat_count(RepeatCount::Infinite),
                 ),
-                Unit::new(msg.unit, player.color, action),
+                Unit::new(msg.unit, player.color),
                 MapCmp,
                 children![(
                     Sprite {
                         color: Color::from(BLACK),
-                        custom_size: Some(Vec2::new(bar_size * 0.4, bar_size * 0.08)),
+                        custom_size: Some(HEALTH_BAR_SIZE),
                         ..default()
                     },
-                    Transform::from_xyz(0., bar_size * 0.33, 0.1),
+                    Transform::from_xyz(0., HEALTH_BAR_SIZE.x * 0.75, 0.1),
                     UnitHealthWrapperCmp,
                     children![(
                         Sprite {
                             color: Color::from(LIME),
-                            custom_size: Some(Vec2::new(bar_size * 0.38, bar_size * 0.06)),
+                            custom_size: Some(HEALTH_BAR_SIZE * Vec2::new(0.9, 0.76)),
                             ..default()
                         },
                         Transform::from_xyz(0., 0., 0.2),

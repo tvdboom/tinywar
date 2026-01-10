@@ -30,6 +30,7 @@ use crate::core::persistence::{LoadGameMsg, SaveGameMsg};
 use crate::core::settings::Settings;
 use crate::core::states::{AppState, AudioState, GameState};
 use crate::core::systems::{check_keys_game, check_keys_menu, on_resize_system};
+use crate::core::units::systems::update_units;
 use crate::core::utils::despawn;
 use bevy::prelude::*;
 use bevy_renet::renet::{RenetClient, RenetServer};
@@ -144,7 +145,8 @@ impl Plugin for GamePlugin {
             .add_systems(Update, (queue_keyboard, queue_message).in_set(InPlayingOrPausedSet))
             .add_systems(
                 Update,
-                (queue_resolve, spawn_unit_message, spawn_building_message).in_set(InPlayingSet),
+                (queue_resolve, spawn_unit_message, spawn_building_message, update_units)
+                    .in_set(InPlayingSet),
             )
             .add_systems(
                 OnExit(AppState::Game),
