@@ -88,7 +88,8 @@ impl FromWorld for WorldAssets {
             ("swords1", assets.load("images/ui/swords1.png")),
             ("swords2", assets.load("images/ui/swords2.png")),
             ("swords3", assets.load("images/ui/swords3.png")),
-            ("small ribbons", assets.load("images/ui/swords.png")),
+            ("small ribbons", assets.load("images/ui/small ribbons.png")),
+            ("large ribbons", assets.load("images/ui/large ribbons.png")),
         ]);
 
         let mut atlas: HashMap<&'static str, AtlasInfo> = HashMap::new();
@@ -146,14 +147,24 @@ impl FromWorld for WorldAssets {
 
         let mut texture = world.get_resource_mut::<Assets<TextureAtlasLayout>>().unwrap();
         let swords1 = TextureAtlasLayout::from_grid(UVec2::new(105, 128), 1, 5, None, None);
+        let large_ribbons = TextureAtlasLayout::from_grid(UVec2::new(64, 128), 7, 5, None, None);
 
-        let textures = HashMap::from([(
-            "swords1",
-            TextureInfo {
-                image: images["swords1"].clone(),
-                layout: texture.add(swords1),
-            },
-        )]);
+        let textures = HashMap::from([
+            (
+                "swords1",
+                TextureInfo {
+                    image: images["swords1"].clone(),
+                    layout: texture.add(swords1),
+                },
+            ),
+            (
+                "large ribbons",
+                TextureInfo {
+                    image: images["large ribbons"].clone(),
+                    layout: texture.add(large_ribbons),
+                },
+            ),
+        ]);
 
         // Add atlas separately since it requires mutable access to world
         for color in PlayerColor::iter() {

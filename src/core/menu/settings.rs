@@ -141,7 +141,6 @@ pub fn spawn_label(
                             NORMAL_BUTTON_COLOR
                         }),
                         item.clone(),
-                        Button,
                     ))
                     .observe(recolor_label::<Over>(HOVERED_BUTTON_COLOR))
                     .observe(recolor_label::<Out>(NORMAL_BUTTON_COLOR))

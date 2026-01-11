@@ -31,10 +31,12 @@ pub fn queue_keyboard(
     keyboard: Res<ButtonInput<KeyCode>>,
     players: Res<Players>,
     mut queue_unit_msg: MessageWriter<QueueUnitMsg>,
+    mut play_audio_msg: MessageWriter<PlayAudioMsg>,
 ) {
     for unit in UnitName::iter() {
         if keyboard.just_pressed(unit.key()) {
             queue_unit_msg.write(QueueUnitMsg::new(players.me.id, unit));
+            play_audio_msg.write(PlayAudioMsg::new("button"));
         }
     }
 }

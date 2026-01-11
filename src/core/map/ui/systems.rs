@@ -20,10 +20,16 @@ use strum::IntoEnumIterator;
 pub struct UiCmp;
 
 #[derive(Component)]
+pub struct AdvanceBannerCmp(pub bool);
+
+#[derive(Component)]
 pub struct ShopButtonCmp(pub UnitName);
 
 #[derive(Component)]
 pub struct ShopLabelCmp(pub UnitName);
+
+#[derive(Component)]
+pub struct SwordQueueCmp(pub usize);
 
 #[derive(Component)]
 pub struct QueueButtonCmp(pub usize);
@@ -44,11 +50,76 @@ pub fn draw_ui(
     window: Single<&Window>,
     assets: Local<WorldAssets>,
 ) {
+    // Draw advance
+    let texture = assets.texture("large ribbons");
+    commands
+        .spawn((
+            Node {
+                top: Val::Percent(3.),
+                left: Val::Percent(15.),
+                width: Val::Percent(70.),
+                height: Val::Percent(10.),
+                position_type: PositionType::Absolute,
+                flex_direction: FlexDirection::Row,
+                ..default()
+            },
+            UiCmp,
+            MapCmp,
+        ))
+        .with_children(|parent| {
+            let mut spawn = |index, width, component| {
+                let mut p = parent.spawn((
+                    Node {
+                        height: Val::Percent(100.),
+                        width,
+                        ..default()
+                    },
+                    ImageNode::from_atlas_image(
+                        texture.image.clone(),
+                        TextureAtlas {
+                            layout: texture.layout.clone(),
+                            index,
+                        },
+                    ),
+                ));
+
+                if let Some(me) = component {
+                    p.insert((
+                        AdvanceBannerCmp(me),
+                        children![(
+                            Node {
+                                justify_content: JustifyContent::End,
+                                align_items: if me {
+                                    AlignItems::Start
+                                } else {
+                                    AlignItems::End
+                                },
+                                ..default()
+                            },
+                            add_text("0%", "bold", 20., &assets, &window),
+                        )],
+                    ));
+                }
+            };
+
+            // Own banner
+            let me = players.me.color.index();
+            spawn(me * 7, Val::Auto, None);
+            spawn(1 + me * 7, Val::Auto, None);
+            spawn(3 + me * 7, Val::Percent(45.), Some(true));
+
+            // Enemy banner
+            let enemy = players.enemy.color.index();
+            spawn(3 + enemy * 7, Val::Percent(45.), Some(false));
+            spawn(5 + enemy * 7, Val::Auto, None);
+            spawn(6 + enemy * 7, Val::Auto, None);
+        });
+
     // Draw units
     commands
         .spawn((
             Node {
-                top: Val::Percent(10.),
+                top: Val::Percent(15.),
                 left: Val::Percent(2.),
                 height: Val::Percent(90.),
                 position_type: PositionType::Absolute,
@@ -56,7 +127,6 @@ pub fn draw_ui(
                 align_items: AlignItems::Start,
                 ..default()
             },
-            Pickable::IGNORE,
             UiCmp,
             MapCmp,
         ))
@@ -74,7 +144,6 @@ pub fn draw_ui(
                             PlayerColor::Blue.to_name(),
                             unit.to_name()
                         ))),
-                        Button,
                         ShopButtonCmp(unit),
                         children![
                             (
@@ -127,93 +196,84 @@ pub fn draw_ui(
     commands
         .spawn((
             Node {
-                left: Val::Percent(5.),
+                left: Val::Percent(10.),
                 bottom: Val::Percent(6.),
                 width: Val::Percent(88.),
-                height: Val::Percent(7.),
+                height: Val::Percent(15.),
                 position_type: PositionType::Absolute,
                 flex_direction: FlexDirection::Row,
                 align_items: AlignItems::Center,
                 justify_content: JustifyContent::Start,
                 ..default()
             },
-            Pickable::IGNORE,
             UiCmp,
             MapCmp,
         ))
         .with_children(|parent| {
-            parent.spawn(ImageNode::from_atlas_image(
-                texture.image,
-                TextureAtlas {
-                    layout: texture.layout,
-                    index: players.me.color.index(),
+            parent.spawn((
+                Node {
+                    height: Val::Percent(100.),
+                    ..default()
                 },
-            ));
-            parent.spawn(ImageNode::new(assets.image("swords2")));
-            parent.spawn(ImageNode::new(assets.image("swords3")));
-
-            parent
-                .spawn((
-                    Node {
-                        left: Val::Percent(7.),
-                        height: Val::Percent(100.),
-                        width: Val::Percent(100.),
-                        position_type: PositionType::Absolute,
-                        flex_direction: FlexDirection::Row,
-                        align_items: AlignItems::Center,
-                        justify_content: JustifyContent::Start,
-                        ..default()
+                ImageNode::from_atlas_image(
+                    texture.image,
+                    TextureAtlas {
+                        layout: texture.layout,
+                        index: players.me.color.index(),
                     },
-                    Pickable::IGNORE,
-                ))
-                .with_children(|parent| {
-                    for i in 0..MAX_QUEUE_LENGTH {
+                ),
+            ));
+
+            for i in 0..MAX_QUEUE_LENGTH {
+                parent
+                    .spawn((
+                        Node {
+                            height: Val::Percent(100.),
+                            align_items: AlignItems::Center,
+                            justify_content: JustifyContent::Center,
+                            ..default()
+                        },
+                        ImageNode::new(assets.image("swords2")),
+                        SwordQueueCmp(i),
+                    ))
+                    .with_children(|parent| {
                         parent
                             .spawn((
                                 Node {
-                                    height: Val::Percent(90.),
+                                    height: Val::Percent(80.),
                                     aspect_ratio: Some(1.0),
-                                    margin: UiRect::ZERO.with_left(Val::Percent(1.)),
                                     ..default()
                                 },
-                                Button,
+                                ImageNode::new(assets.image(format!(
+                                    "{}-{}",
+                                    PlayerColor::Blue.to_name(),
+                                    UnitName::default().to_name()
+                                ))),
                                 QueueButtonCmp(i),
-                                if i == 0 {
-                                    Visibility::Inherited
-                                } else {
-                                    Visibility::Hidden
-                                },
-                                children![
-                                    ImageNode::new(assets.image(format!(
-                                        "{}-{}",
-                                        PlayerColor::Blue.to_name(),
-                                        UnitName::default().to_name()
-                                    ))),
-                                    (
+                                children![(
+                                    Node {
+                                        top: Val::Percent(70.),
+                                        left: Val::Percent(20.),
+                                        width: Val::Percent(60.),
+                                        height: Val::Percent(12.),
+                                        position_type: PositionType::Absolute,
+                                        align_items: AlignItems::Center,
+                                        ..default()
+                                    },
+                                    BackgroundColor(Color::BLACK),
+                                    Visibility::Hidden,
+                                    QueueProgressWrapperCmp,
+                                    children![(
                                         Node {
-                                            top: Val::Percent(70.),
-                                            left: Val::Percent(20.),
-                                            width: Val::Percent(60.),
-                                            height: Val::Percent(12.),
-                                            position_type: PositionType::Absolute,
-                                            align_items: AlignItems::Center,
+                                            width: Val::Percent(95.),
+                                            height: Val::Percent(75.),
+                                            left: Val::Percent(3.),
                                             ..default()
                                         },
-                                        BackgroundColor(Color::BLACK),
-                                        Visibility::Hidden,
-                                        QueueProgressWrapperCmp,
-                                        children![(
-                                            Node {
-                                                width: Val::Percent(95.),
-                                                height: Val::Percent(75.),
-                                                left: Val::Percent(3.),
-                                                ..default()
-                                            },
-                                            BackgroundColor(players.me.color.color()),
-                                            QueueProgressCmp,
-                                        )]
-                                    )
-                                ],
+                                        BackgroundColor(players.me.color.color()),
+                                        QueueProgressCmp,
+                                    )]
+                                )],
                             ))
                             .observe(cursor::<Over>(SystemCursorIcon::Pointer))
                             .observe(cursor::<Out>(SystemCursorIcon::Default))
@@ -229,8 +289,16 @@ pub fn draw_ui(
                                     }
                                 },
                             );
-                    }
-                });
+                    });
+            }
+
+            parent.spawn((
+                Node {
+                    height: Val::Percent(100.),
+                    ..default()
+                },
+                ImageNode::new(assets.image("swords3")),
+            ));
         });
 
     // Draw speed indicator
@@ -242,6 +310,7 @@ pub fn draw_ui(
             ..default()
         },
         add_text(format!("{}x", settings.speed), "medium", 10., &assets, &window),
+        Pickable::IGNORE, // Don't block camera movement
         SpeedCmp,
         UiCmp,
         MapCmp,
@@ -249,15 +318,16 @@ pub fn draw_ui(
 }
 
 pub fn update_ui(
-    unit_q: Query<&Unit>,
+    unit_q: Query<(&Transform, &Unit)>,
+    mut advance_q: Query<(&mut Node, &AdvanceBannerCmp)>,
     mut label_q: Query<(&mut Text, &ShopLabelCmp)>,
-    mut queue_q: Query<(Entity, &mut Visibility, &mut QueueButtonCmp)>,
-    mut images_q: Query<&mut ImageNode>,
-    mut progress_wrapper_q: Query<
-        (Entity, &mut Visibility),
-        (With<QueueProgressWrapperCmp>, Without<QueueButtonCmp>),
+    mut queue_q: Query<(&mut Node, &mut SwordQueueCmp), Without<AdvanceBannerCmp>>,
+    mut images_q: Query<(Entity, &mut ImageNode, &QueueButtonCmp)>,
+    mut progress_wrapper_q: Query<(Entity, &mut Visibility), With<QueueProgressWrapperCmp>>,
+    mut progress_inner_q: Query<
+        &mut Node,
+        (With<QueueProgressCmp>, Without<SwordQueueCmp>, Without<AdvanceBannerCmp>),
     >,
-    mut progress_inner_q: Query<&mut Node, With<QueueProgressCmp>>,
     mut anim_q: Query<&mut TweenAnim>,
     mut speed_q: Single<&mut Text, (With<SpeedCmp>, Without<ShopLabelCmp>)>,
     children_q: Query<&Children>,
@@ -267,10 +337,35 @@ pub fn update_ui(
     assets: Local<WorldAssets>,
 ) {
     // Update the shop labels
+    let (mut me, mut enemy) = (0., 0.);
     let mut counts = HashMap::new();
-    for unit in unit_q.iter() {
+    for (unit_t, unit) in unit_q.iter() {
         if unit.color == players.me.color {
+            me += unit_t.translation.x;
             *counts.entry(unit.name).or_insert(0) += 1;
+        } else {
+            enemy -= unit_t.translation.x;
+        }
+    }
+
+    let frac = if me > 0. || enemy > 0. {
+        me.min(enemy) / me.max(enemy)
+    } else {
+        1. // No units on the board (start of game)
+    };
+    for (mut node, banner) in &mut advance_q {
+        if banner.0 {
+            node.width = if me > enemy {
+                Val::Percent(45. * (1. + frac))
+            } else {
+                Val::Percent(45. * frac)
+            };
+        } else {
+            node.width = if me > enemy {
+                Val::Percent(frac)
+            } else {
+                Val::Percent(45. * frac)
+            };
         }
     }
 
@@ -279,23 +374,19 @@ pub fn update_ui(
     }
 
     // Update the queue
-    for (entity, mut visibility, button) in &mut queue_q {
-        if let Some(queue) = players.me.queue.get(button.0) {
-            *visibility = Visibility::Inherited;
+    for (mut node, queue) in &mut queue_q {
+        node.display = if queue.0 == 0 || players.me.queue.get(queue.0).is_some() {
+            Display::Flex
+        } else {
+            Display::None
+        };
+    }
 
-            // Update child image
-            if let Ok(children) = children_q.get(entity) {
-                for child in children {
-                    if let Ok(mut image) = images_q.get_mut(*child) {
-                        image.image = assets.image(format!(
-                            "{}-{}",
-                            players.me.color.to_name(),
-                            queue.unit.to_name()
-                        ));
-                        break;
-                    }
-                }
-            }
+    // Update the image
+    for (entity, mut node, button) in &mut images_q {
+        if let Some(queue) = players.me.queue.get(button.0) {
+            node.image =
+                assets.image(format!("{}-{}", players.me.color.to_name(), queue.unit.to_name()));
 
             // Update progress bar
             if let Ok(children) = children_q.get(entity) {
@@ -322,8 +413,6 @@ pub fn update_ui(
                     }
                 }
             }
-        } else if button.0 != 0 {
-            *visibility = Visibility::Hidden;
         }
     }
 
