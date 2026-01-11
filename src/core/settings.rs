@@ -23,6 +23,17 @@ impl PlayerColor {
             Self::Yellow => Color::srgb_u8(220, 170, 70),
         }
     }
+
+    /// Matches the index of the images on the UI
+    pub fn index(self) -> usize {
+        match self {
+            Self::Black => 4,
+            Self::Blue => 0,
+            Self::Purple => 3,
+            Self::Red => 1,
+            Self::Yellow => 2,
+        }
+    }
 }
 
 #[derive(Resource, Clone, Debug, Serialize, Deserialize)]

@@ -12,6 +12,12 @@ use strum::IntoEnumIterator;
 #[derive(Clone)]
 pub struct TextureInfo {
     pub image: Handle<Image>,
+    pub layout: Handle<TextureAtlasLayout>,
+}
+
+#[derive(Clone)]
+pub struct AtlasInfo {
+    pub image: Handle<Image>,
     pub atlas: TextureAtlas,
     pub last_index: usize,
 }
@@ -21,6 +27,7 @@ pub struct WorldAssets {
     pub fonts: HashMap<&'static str, Handle<Font>>,
     pub images: HashMap<&'static str, Handle<Image>>,
     pub textures: HashMap<&'static str, TextureInfo>,
+    pub atlas: HashMap<&'static str, AtlasInfo>,
 }
 
 impl WorldAssets {
@@ -49,6 +56,10 @@ impl WorldAssets {
     pub fn texture(&self, name: impl Into<String>) -> TextureInfo {
         self.get_asset(&self.textures, name, "texture").clone()
     }
+
+    pub fn atlas(&self, name: impl Into<String>) -> AtlasInfo {
+        self.get_asset(&self.atlas, name, "atlas").clone()
+    }
 }
 
 impl FromWorld for WorldAssets {
@@ -73,12 +84,14 @@ impl FromWorld for WorldAssets {
             ("sound", assets.load("images/icons/sound.png")),
             // Background
             ("bg", assets.load("images/bg/bg.png")),
-            // Map
-            ("tiles0", assets.load("images/map/tiles0.png")),
-            ("foam", assets.load("images/map/foam.png")),
+            // Ui
+            ("swords1", assets.load("images/ui/swords1.png")),
+            ("swords2", assets.load("images/ui/swords2.png")),
+            ("swords3", assets.load("images/ui/swords3.png")),
+            ("small ribbons", assets.load("images/ui/swords.png")),
         ]);
 
-        let mut textures: HashMap<&'static str, TextureInfo> = HashMap::new();
+        let mut atlas: HashMap<&'static str, AtlasInfo> = HashMap::new();
 
         for color in PlayerColor::iter() {
             for building in BuildingName::iter() {
@@ -131,8 +144,18 @@ impl FromWorld for WorldAssets {
             }
         }
 
-        // Add textures separately since it requires mutable access to world
         let mut texture = world.get_resource_mut::<Assets<TextureAtlasLayout>>().unwrap();
+        let swords1 = TextureAtlasLayout::from_grid(UVec2::new(105, 128), 1, 5, None, None);
+
+        let textures = HashMap::from([(
+            "swords1",
+            TextureInfo {
+                image: images["swords1"].clone(),
+                layout: texture.add(swords1),
+            },
+        )]);
+
+        // Add atlas separately since it requires mutable access to world
         for color in PlayerColor::iter() {
             for unit in UnitName::iter() {
                 for action in Action::iter() {
@@ -152,9 +175,9 @@ impl FromWorld for WorldAssets {
                         None,
                     );
 
-                    textures.insert(
+                    atlas.insert(
                         name,
-                        TextureInfo {
+                        AtlasInfo {
                             image: images[name].clone(),
                             atlas: TextureAtlas {
                                 layout: texture.add(layout),
@@ -172,6 +195,7 @@ impl FromWorld for WorldAssets {
             fonts,
             images,
             textures,
+            atlas,
         }
     }
 }

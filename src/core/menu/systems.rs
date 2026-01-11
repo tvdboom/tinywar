@@ -6,8 +6,9 @@ use bevy_renet::renet::{RenetClient, RenetServer};
 
 use crate::core::assets::WorldAssets;
 use crate::core::constants::{
-    BUTTON_TEXT_SIZE, DISABLED_BUTTON_COLOR, GRID_SIZE, NORMAL_BUTTON_COLOR, TITLE_TEXT_SIZE,
+    BUTTON_TEXT_SIZE, DISABLED_BUTTON_COLOR, NORMAL_BUTTON_COLOR, TITLE_TEXT_SIZE,
 };
+use crate::core::map::map::Map;
 use crate::core::mechanics::spawn::SpawnBuildingMsg;
 use crate::core::menu::buttons::{
     spawn_menu_button, DisabledButton, IpTextCmp, LobbyTextCmp, MenuBtn, MenuCmp,
@@ -373,24 +374,25 @@ pub fn start_new_game_message(
             *server.clients_id().first().unwrap()
         };
 
-        // Spawn starting buildings
-        let coord = |pos: (f32, f32)| Vec2::new(GRID_SIZE * pos.0, GRID_SIZE * pos.1);
-        let positions = settings.map_size.starting_positions();
+        let map = Map::new(&settings.map_size);
 
+        // Spawn starting buildings
+        let positions = map.starting_positions();
         spawn_building_msg.write(SpawnBuildingMsg::new(
             0,
             BuildingName::default(),
-            coord(positions[0]),
+            positions[0],
             true,
         ));
         spawn_building_msg.write(SpawnBuildingMsg::new(
             enemy_id,
             BuildingName::default(),
-            coord(positions[1]),
+            positions[1],
             true,
         ));
 
         commands.insert_resource(Host);
+        commands.insert_resource(map);
         commands.insert_resource(Players {
             me: Player::new(0, settings.color),
             enemy: Player::new(enemy_id, settings.enemy_color),

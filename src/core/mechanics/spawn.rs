@@ -92,7 +92,7 @@ pub fn spawn_unit_message(
         let player = players.get(msg.id);
         let action = Action::default();
 
-        let texture = assets.texture(format!(
+        let texture = assets.atlas(format!(
             "{}-{}-{}",
             player.color.to_name(),
             msg.unit.to_name(),

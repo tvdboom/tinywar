@@ -1,7 +1,7 @@
 use crate::core::assets::WorldAssets;
 use crate::core::audio::PlayAudioMsg;
 use crate::core::constants::MAX_QUEUE_LENGTH;
-use crate::core::map::systems::{BgAnimCmp, MapCmp, SpeedCmp};
+use crate::core::map::systems::MapCmp;
 use crate::core::mechanics::queue::QueueUnitMsg;
 use crate::core::menu::utils::add_text;
 use crate::core::player::Players;
@@ -13,6 +13,7 @@ use crate::utils::NameFromEnum;
 use bevy::prelude::*;
 use bevy::window::SystemCursorIcon;
 use bevy_tweening::{PlaybackState, TweenAnim};
+use std::collections::HashMap;
 use strum::IntoEnumIterator;
 
 #[derive(Component)]
@@ -33,6 +34,9 @@ pub struct QueueProgressWrapperCmp;
 #[derive(Component)]
 pub struct QueueProgressCmp;
 
+#[derive(Component)]
+pub struct SpeedCmp;
+
 pub fn draw_ui(
     mut commands: Commands,
     players: Res<Players>,
@@ -46,7 +50,7 @@ pub fn draw_ui(
             Node {
                 top: Val::Percent(10.),
                 left: Val::Percent(2.),
-                width: Val::Percent(100.),
+                height: Val::Percent(90.),
                 position_type: PositionType::Absolute,
                 flex_direction: FlexDirection::Column,
                 align_items: AlignItems::Start,
@@ -61,7 +65,7 @@ pub fn draw_ui(
                 parent
                     .spawn((
                         Node {
-                            width: Val::Percent(8.),
+                            height: Val::Percent(12.),
                             aspect_ratio: Some(1.),
                             ..default()
                         },
@@ -119,15 +123,18 @@ pub fn draw_ui(
         });
 
     // Draw queue
+    let texture = assets.texture("swords1");
     commands
         .spawn((
             Node {
-                bottom: Val::Percent(5.),
-                width: Val::Percent(100.),
+                left: Val::Percent(5.),
+                bottom: Val::Percent(6.),
+                width: Val::Percent(88.),
+                height: Val::Percent(7.),
                 position_type: PositionType::Absolute,
                 flex_direction: FlexDirection::Row,
                 align_items: AlignItems::Center,
-                justify_content: JustifyContent::Center,
+                justify_content: JustifyContent::Start,
                 ..default()
             },
             Pickable::IGNORE,
@@ -135,69 +142,95 @@ pub fn draw_ui(
             MapCmp,
         ))
         .with_children(|parent| {
-            for i in 0..MAX_QUEUE_LENGTH {
-                parent
-                    .spawn((
-                        Node {
-                            width: Val::Percent(7.),
-                            aspect_ratio: Some(1.0),
-                            margin: UiRect::ZERO.with_left(Val::Percent(1.)),
-                            ..default()
-                        },
-                        Button,
-                        QueueButtonCmp(i),
-                        if i == 0 {
-                            Visibility::Inherited
-                        } else {
-                            Visibility::Hidden
-                        },
-                        children![
-                            ImageNode::new(assets.image(format!(
-                                "{}-{}",
-                                PlayerColor::Blue.to_name(),
-                                UnitName::default().to_name()
-                            ))),
-                            (
+            parent.spawn(ImageNode::from_atlas_image(
+                texture.image,
+                TextureAtlas {
+                    layout: texture.layout,
+                    index: players.me.color.index(),
+                },
+            ));
+            parent.spawn(ImageNode::new(assets.image("swords2")));
+            parent.spawn(ImageNode::new(assets.image("swords3")));
+
+            parent
+                .spawn((
+                    Node {
+                        left: Val::Percent(7.),
+                        height: Val::Percent(100.),
+                        width: Val::Percent(100.),
+                        position_type: PositionType::Absolute,
+                        flex_direction: FlexDirection::Row,
+                        align_items: AlignItems::Center,
+                        justify_content: JustifyContent::Start,
+                        ..default()
+                    },
+                    Pickable::IGNORE,
+                ))
+                .with_children(|parent| {
+                    for i in 0..MAX_QUEUE_LENGTH {
+                        parent
+                            .spawn((
                                 Node {
-                                    position_type: PositionType::Absolute,
-                                    top: Val::Percent(70.),
-                                    left: Val::Percent(20.),
-                                    width: Val::Percent(60.),
-                                    height: Val::Percent(12.),
-                                    align_items: AlignItems::Center,
+                                    height: Val::Percent(90.),
+                                    aspect_ratio: Some(1.0),
+                                    margin: UiRect::ZERO.with_left(Val::Percent(1.)),
                                     ..default()
                                 },
-                                BackgroundColor(Color::BLACK),
-                                Visibility::Hidden,
-                                QueueProgressWrapperCmp,
-                                children![(
-                                    Node {
-                                        width: Val::Percent(95.),
-                                        height: Val::Percent(75.),
-                                        left: Val::Percent(3.),
-                                        ..default()
-                                    },
-                                    BackgroundColor(players.me.color.color()),
-                                    QueueProgressCmp,
-                                )]
-                            )
-                        ],
-                    ))
-                    .observe(cursor::<Over>(SystemCursorIcon::Pointer))
-                    .observe(cursor::<Out>(SystemCursorIcon::Default))
-                    .observe(
-                        |event: On<Pointer<Click>>,
-                         btn_q: Query<&QueueButtonCmp>,
-                         mut players: ResMut<Players>| {
-                            // Remove unit from queue if clicked
-                            if event.button == PointerButton::Primary {
-                                if let Ok(button) = btn_q.get(event.entity) {
-                                    players.me.queue.remove(button.0);
-                                }
-                            }
-                        },
-                    );
-            }
+                                Button,
+                                QueueButtonCmp(i),
+                                if i == 0 {
+                                    Visibility::Inherited
+                                } else {
+                                    Visibility::Hidden
+                                },
+                                children![
+                                    ImageNode::new(assets.image(format!(
+                                        "{}-{}",
+                                        PlayerColor::Blue.to_name(),
+                                        UnitName::default().to_name()
+                                    ))),
+                                    (
+                                        Node {
+                                            top: Val::Percent(70.),
+                                            left: Val::Percent(20.),
+                                            width: Val::Percent(60.),
+                                            height: Val::Percent(12.),
+                                            position_type: PositionType::Absolute,
+                                            align_items: AlignItems::Center,
+                                            ..default()
+                                        },
+                                        BackgroundColor(Color::BLACK),
+                                        Visibility::Hidden,
+                                        QueueProgressWrapperCmp,
+                                        children![(
+                                            Node {
+                                                width: Val::Percent(95.),
+                                                height: Val::Percent(75.),
+                                                left: Val::Percent(3.),
+                                                ..default()
+                                            },
+                                            BackgroundColor(players.me.color.color()),
+                                            QueueProgressCmp,
+                                        )]
+                                    )
+                                ],
+                            ))
+                            .observe(cursor::<Over>(SystemCursorIcon::Pointer))
+                            .observe(cursor::<Out>(SystemCursorIcon::Default))
+                            .observe(
+                                |event: On<Pointer<Click>>,
+                                 btn_q: Query<&QueueButtonCmp>,
+                                 mut players: ResMut<Players>| {
+                                    // Remove unit from queue if clicked
+                                    if event.button == PointerButton::Primary {
+                                        if let Ok(button) = btn_q.get(event.entity) {
+                                            players.me.queue.remove(button.0);
+                                        }
+                                    }
+                                },
+                            );
+                    }
+                });
         });
 
     // Draw speed indicator
@@ -225,7 +258,7 @@ pub fn update_ui(
         (With<QueueProgressWrapperCmp>, Without<QueueButtonCmp>),
     >,
     mut progress_inner_q: Query<&mut Node, With<QueueProgressCmp>>,
-    mut anim_q: Query<(&mut TweenAnim, Option<&BgAnimCmp>)>,
+    mut anim_q: Query<&mut TweenAnim>,
     mut speed_q: Single<&mut Text, (With<SpeedCmp>, Without<ShopLabelCmp>)>,
     children_q: Query<&Children>,
     settings: Res<Settings>,
@@ -234,12 +267,15 @@ pub fn update_ui(
     assets: Local<WorldAssets>,
 ) {
     // Update the shop labels
+    let mut counts = HashMap::new();
+    for unit in unit_q.iter() {
+        if unit.color == players.me.color {
+            *counts.entry(unit.name).or_insert(0) += 1;
+        }
+    }
+
     for (mut text, label) in label_q.iter_mut() {
-        text.0 = unit_q
-            .iter()
-            .filter(|a| a.name == label.0 && a.color == players.me.color)
-            .count()
-            .to_string()
+        text.0 = counts.get(&label.0).unwrap_or(&0).to_string();
     }
 
     // Update the queue
@@ -292,13 +328,10 @@ pub fn update_ui(
     }
 
     // Play/pause tween animations
-    anim_q.iter_mut().for_each(|(mut t, a)| match game_state.get() {
+    anim_q.iter_mut().for_each(|mut t| match game_state.get() {
         GameState::Playing => {
             t.playback_state = PlaybackState::Playing;
-            if a.is_none() {
-                // Ignore background animations (e.g., water foam) from speed changes
-                t.speed = settings.speed as f64;
-            }
+            t.speed = settings.speed as f64;
         },
         _ => t.playback_state = PlaybackState::Paused,
     });

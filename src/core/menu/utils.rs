@@ -2,7 +2,6 @@ use std::fmt::Debug;
 
 use crate::core::assets::WorldAssets;
 use bevy::prelude::*;
-use bevy::window::{CursorIcon, SystemCursorIcon};
 
 #[derive(Component)]
 pub struct TextSize(pub f32);

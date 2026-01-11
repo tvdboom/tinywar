@@ -1,23 +1,6 @@
-use crate::core::assets::WorldAssets;
-use crate::core::constants::{GRID_SIZE, TILE_SIZE};
-use bevy::asset::Handle;
-use bevy::image::Image;
-use bevy_ecs_tilemap::prelude::*;
+use bevy::prelude::*;
+use bevy_ecs_tiled::prelude::TilePos;
 use serde::{Deserialize, Serialize};
-
-fn parse_map(map_str: &str) -> Vec<Vec<u32>> {
-    let mut rows: Vec<Vec<u32>> = map_str
-        .lines()
-        .filter(|line| !line.trim().is_empty())
-        .map(|line| line.split_whitespace().map(|num| num.parse::<u32>().unwrap()).collect())
-        .collect();
-
-    // Reverse order since bevy_ecs_tilemap start bottom-left
-    // and the str representation starts top-left
-    rows.reverse();
-
-    rows
-}
 
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 pub enum MapSize {
@@ -27,82 +10,49 @@ pub enum MapSize {
 }
 
 impl MapSize {
-    /// Building starting positions given by the tile position anchored at the center of the map
-    pub fn starting_positions(&self) -> [(f32, f32); 2] {
+    /// Building starting positions given by the tile position
+    pub fn starting_tiles(&self) -> [TilePos; 2] {
         match self {
-            Self::Small => [(-6.5, 1.), (6.5, 1.)],
+            Self::Small => [TilePos::new(3, 5), TilePos::new(16, 5)],
             _ => todo!(),
         }
     }
 }
 
-/// A tile layer on the map
-#[derive(Debug)]
-pub struct Layer {
-    pub texture: Handle<Image>,
-    pub tile_size: TilemapTileSize,
-    pub grid: Vec<Vec<u32>>,
-    pub animation: Option<u32>,
-}
-
 /// Metadata required to draw the map
-#[derive(Debug)]
+#[derive(Resource, Debug)]
 pub struct Map {
-    pub size: TilemapSize,
-    pub grid_size: TilemapGridSize,
-    pub map_type: TilemapType,
-    pub layers: Vec<Layer>,
+    size: MapSize,
 }
 
 impl Map {
-    pub fn new(map_size: &MapSize, assets: &WorldAssets) -> Map {
-        // Lower grass layer
-        let layer1 = Layer {
-            texture: assets.image("tiles0"),
-            tile_size: TilemapTileSize::new(64., 64.),
-            grid: parse_map(
-                "
-                  0  1  1  1  1  1 28 28 28 28 28  1  1  1  1  1  2
-                  9 10 10 10 10 11  4  4  4  4  4  9 10 10 10 10 11
-                  9 10 10 10 10 11  4  4  4  4  4  9 10 10 10 10 11
-                  9 10 10 10 10 11  4  4  4  4  4  9 10 10 10 10 11
-                  9 10 10 10 10 10  1  1  1  1  1 10 10 10 10 10 11
-                  9 10 10 10 10 10 19 19 19 19 19 10 10 10 10 10 11
-                  9 10 10 10 10 11  4  4  4  4  4  9 10 10 10 10 11
-                  9 10 10 10 10 11  4  4  4  4  4  9 10 10 10 10 11
-                  9 10 10 10 10 11  4  4  4  4  4  9 10 10 10 10 11
-                 18 19 19 19 19 19 28 28 28 28 28 19 19 19 19 19 20",
-            ),
-            animation: None,
-        };
+    pub const TILE_SIZE: u32 = 64;
 
-        // The foam layer
-        let layer0 = Layer {
-            texture: assets.image("foam"),
-            tile_size: TilemapTileSize::new(TILE_SIZE, TILE_SIZE),
-            grid: layer1
-                .grid
-                .iter()
-                .map(|row| {
-                    row.iter()
-                        .map(|&v| {
-                            if v == 4 {
-                                u32::MAX // u32::MAX used as marker to skip the tile
-                            } else {
-                                0
-                            }
-                        })
-                        .collect()
-                })
-                .collect(),
-            animation: Some(15),
-        };
-
+    pub fn new(size: &MapSize) -> Map {
         Self {
-            size: TilemapSize::new(layer1.grid[0].len() as u32, layer1.grid.len() as u32),
-            grid_size: TilemapGridSize::new(GRID_SIZE, GRID_SIZE),
-            map_type: TilemapType::Square,
-            layers: vec![layer0, layer1],
+            size: *size,
         }
+    }
+
+    pub fn size(&self) -> UVec2 {
+        match self.size {
+            MapSize::Small => UVec2::new(20, 10),
+            _ => todo!(),
+        }
+    }
+
+    pub fn tile_to_world(&self, tile: &TilePos) -> Vec2 {
+        let size = self.size();
+        let half_w = size.x as f32 * 0.5;
+        let half_h = size.y as f32 * 0.5;
+
+        Vec2::new(
+            (tile.x as f32 + 0.5 - half_w) * Self::TILE_SIZE as f32,
+            (tile.y as f32 + 0.5 - half_h) * Self::TILE_SIZE as f32,
+        )
+    }
+
+    pub fn starting_positions(&self) -> Vec<Vec2> {
+        self.size.starting_tiles().iter().map(|p| self.tile_to_world(p)).collect()
     }
 }

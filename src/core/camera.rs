@@ -1,8 +1,8 @@
-use crate::core::constants::{LERP_FACTOR, MAX_ZOOM, MIN_ZOOM, ZOOM_FACTOR};
+use crate::core::constants::{LERP_FACTOR, MAX_MAP_OFFSET, MAX_ZOOM, MIN_ZOOM, ZOOM_FACTOR};
+use crate::core::map::map::Map;
 use bevy::input::mouse::{MouseMotion, MouseWheel};
 use bevy::prelude::*;
 use bevy::window::{CursorIcon, SystemCursorIcon};
-use bevy_ecs_tilemap::prelude::*;
 
 #[derive(Component)]
 pub struct MainCamera;
@@ -26,7 +26,6 @@ pub fn setup_camera(mut commands: Commands) {
 
 pub fn move_camera(
     mut commands: Commands,
-    map_q: Query<(&TilemapSize, &TilemapGridSize)>,
     ui_q: Query<&Interaction, With<Node>>,
     camera_q: Single<
         (&Camera, &GlobalTransform, &mut Transform, &mut Projection),
@@ -34,6 +33,7 @@ pub fn move_camera(
     >,
     mut scroll_msg: MessageReader<MouseWheel>,
     mut motion_ev: MessageReader<MouseMotion>,
+    map: Res<Map>,
     mouse: Res<ButtonInput<MouseButton>>,
     window: Single<(Entity, &Window)>,
 ) {
@@ -92,22 +92,18 @@ pub fn move_camera(
     let view_size = projection.area.max - projection.area.min;
 
     // Clamp camera position within bounds
-    if let Some((size, grid)) = map_q.iter().next() {
-        let width = size.x as f32 * grid.x;
-        let height = size.y as f32 * grid.y;
-
-        position = position.lerp(
-            clamp_to_rect(
-                position,
-                view_size,
-                Rect {
-                    min: Vec2::new(-width * 0.5, -height * 0.5) * 1.8,
-                    max: Vec2::new(width * 0.5, height * 0.5) * 1.8,
-                },
-            ),
-            LERP_FACTOR,
-        );
-    }
+    let size = map.size().as_vec2() * Map::TILE_SIZE as f32;
+    position = position.lerp(
+        clamp_to_rect(
+            position,
+            view_size,
+            Rect {
+                min: Vec2::new(-size.x * 0.5, -size.y * 0.5) * MAX_MAP_OFFSET,
+                max: Vec2::new(size.x * 0.5, size.y * 0.5) * MAX_MAP_OFFSET,
+            },
+        ),
+        LERP_FACTOR,
+    );
 
     camera_t.translation = position.extend(camera_t.translation.z);
 }

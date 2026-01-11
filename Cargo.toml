@@ -41,7 +41,7 @@ bevy = { version = "0.17.3", default-features = false, features = [
     "x11",
     "zstd_rust",
 ]}
-bevy_ecs_tilemap = "0.17.0"
+bevy_ecs_tiled = "0.10.0"
 bevy_kira_audio = "0.24.0"
 bevy_renet = "3.0.0"
 bevy_tweening = "0.14.0"

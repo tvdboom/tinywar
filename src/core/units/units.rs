@@ -3,7 +3,7 @@ use bevy::prelude::{Component, KeyCode};
 use serde::{Deserialize, Serialize};
 use strum_macros::EnumIter;
 
-#[derive(EnumIter, Clone, Copy, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[derive(EnumIter, Clone, Copy, Debug, Default, Eq, Hash, PartialEq, Serialize, Deserialize)]
 pub enum UnitName {
     #[default]
     Warrior,

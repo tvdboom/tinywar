@@ -8,7 +8,7 @@ use bevy::ecs::system::NonSendMarker;
 use bevy::prelude::*;
 use bevy::window::{WindowMode, WindowResolution};
 use bevy::winit::WINIT_WINDOWS;
-use bevy_ecs_tilemap::TilemapPlugin;
+use bevy_ecs_tiled::prelude::TiledPlugin;
 use bevy_kira_audio::AudioPlugin;
 use bevy_renet::netcode::{NetcodeClientPlugin, NetcodeServerPlugin};
 use bevy_renet::{RenetClientPlugin, RenetServerPlugin};
@@ -61,7 +61,7 @@ fn main() {
     )
     // Networking: systems are disabled until server/client resource is added
     .add_plugins((RenetServerPlugin, NetcodeServerPlugin, RenetClientPlugin, NetcodeClientPlugin))
-    .add_plugins((AudioPlugin, TilemapPlugin, TweeningPlugin))
+    .add_plugins((AudioPlugin, TweeningPlugin, TiledPlugin::default()))
     .add_plugins(GamePlugin);
 
     #[cfg(target_os = "windows")]
