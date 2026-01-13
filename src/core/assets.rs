@@ -82,6 +82,10 @@ impl FromWorld for WorldAssets {
             ("mute", assets.load("images/icons/mute.png")),
             ("sound", assets.load("images/icons/sound.png")),
             ("music", assets.load("images/icons/music.png")),
+            ("any arrow", assets.load("images/icons/any arrow.png")),
+            ("top arrow", assets.load("images/icons/top arrow.png")),
+            ("top-mid arrow", assets.load("images/icons/top-mid arrow.png")),
+            ("mid arrow", assets.load("images/icons/mid arrow.png")),
             // Background
             ("bg", assets.load("images/bg/bg.png")),
             // Ui

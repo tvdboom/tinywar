@@ -1,5 +1,5 @@
 use crate::core::assets::WorldAssets;
-use crate::core::constants::{BUILDINGS_Z, FRAME_RATE, HEALTH_BAR_SIZE, UNITS_Z};
+use crate::core::constants::{BUILDINGS_Z, FRAME_RATE, HEALTH_BAR_SIZE, UNITS_Z, UNIT_SCALE};
 use crate::core::map::systems::MapCmp;
 use crate::core::map::utils::SpriteFrameLens;
 use crate::core::player::Players;
@@ -72,7 +72,7 @@ pub fn spawn_building_message(
             ))),
             Transform {
                 translation: msg.position.extend(BUILDINGS_Z),
-                scale: Vec3::splat(0.6),
+                scale: Vec3::splat(UNIT_SCALE),
                 ..default()
             },
             Building::new(msg.building, player.color, msg.is_base),
@@ -92,7 +92,7 @@ pub fn spawn_unit_message(
         let player = players.get(msg.id);
         let action = Action::default();
 
-        let texture = assets.atlas(format!(
+        let atlas = assets.atlas(format!(
             "{}-{}-{}",
             player.color.to_name(),
             msg.unit.to_name(),
@@ -105,8 +105,8 @@ pub fn spawn_unit_message(
         {
             commands.spawn((
                 Sprite {
-                    image: texture.image,
-                    texture_atlas: Some(texture.atlas),
+                    image: atlas.image,
+                    texture_atlas: Some(atlas.atlas),
                     custom_size: Some(Vec2::splat(msg.unit.size())),
                     flip_x: players.me.color != player.color,
                     ..default()
@@ -117,18 +117,18 @@ pub fn spawn_unit_message(
                         base_t.translation.y - 70.,
                         UNITS_Z,
                     ),
-                    scale: Vec3::splat(0.5),
+                    scale: Vec3::splat(UNIT_SCALE),
                     ..default()
                 },
                 TweenAnim::new(
                     Tween::new(
                         EaseFunction::Linear,
                         Duration::from_millis(FRAME_RATE * msg.unit.frames(action) as u64),
-                        SpriteFrameLens(texture.last_index),
+                        SpriteFrameLens(atlas.last_index),
                     )
                     .with_repeat_count(RepeatCount::Infinite),
                 ),
-                Unit::new(msg.unit, player.color),
+                Unit::new(msg.unit, player),
                 MapCmp,
                 children![(
                     Sprite {
@@ -137,6 +137,7 @@ pub fn spawn_unit_message(
                         ..default()
                     },
                     Transform::from_xyz(0., HEALTH_BAR_SIZE.x * 0.75, 0.1),
+                    Visibility::Hidden,
                     UnitHealthWrapperCmp,
                     children![(
                         Sprite {

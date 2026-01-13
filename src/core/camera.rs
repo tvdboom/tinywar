@@ -34,7 +34,6 @@ pub fn move_camera(
     >,
     mut scroll_msg: MessageReader<MouseWheel>,
     mut motion_ev: MessageReader<MouseMotion>,
-    map: Res<Map>,
     mouse: Res<ButtonInput<MouseButton>>,
     window: Single<(Entity, &Window)>,
 ) {
@@ -93,7 +92,7 @@ pub fn move_camera(
     let view_size = projection.area.max - projection.area.min;
 
     // Clamp camera position within bounds
-    let size = map.size().as_vec2() * Map::TILE_SIZE as f32;
+    let size = Map::MAP_SIZE.as_vec2() * Map::TILE_SIZE as f32;
     position = position.lerp(
         clamp_to_rect(
             position,

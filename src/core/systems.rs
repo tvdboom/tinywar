@@ -41,8 +41,8 @@ pub fn check_keys_menu(
                 next_app_state.set(AppState::MultiPlayerMenu)
             },
             AppState::Game => match game_state.get() {
-                GameState::Playing => next_game_state.set(GameState::GameMenu),
-                GameState::Paused | GameState::GameMenu => next_game_state.set(GameState::Playing),
+                GameState::Playing | GameState::Paused => next_game_state.set(GameState::GameMenu),
+                GameState::GameMenu => next_game_state.set(GameState::Playing),
                 GameState::EndGame => next_app_state.set(AppState::MainMenu),
                 GameState::Settings => next_game_state.set(GameState::GameMenu),
             },
@@ -79,10 +79,12 @@ pub fn check_keys_game(
                 GameState::Paused => next_game_state.set(GameState::Playing),
                 _ => unreachable!(),
             }
-        } else if keyboard.just_released(KeyCode::ArrowRight) {
-            settings.speed = (settings.speed * 2.).min(MAX_GAME_SPEED);
-        } else if keyboard.just_released(KeyCode::ArrowLeft) {
-            settings.speed = (settings.speed * 0.5).max(MIN_GAME_SPEED);
+        } else if keyboard.any_pressed([KeyCode::ControlLeft, KeyCode::ControlRight]) {
+            if keyboard.just_released(KeyCode::ArrowRight) {
+                settings.speed = (settings.speed * 2.).min(MAX_GAME_SPEED);
+            } else if keyboard.just_released(KeyCode::ArrowLeft) {
+                settings.speed = (settings.speed * 0.5).max(MIN_GAME_SPEED);
+            }
         }
     }
 }
@@ -92,16 +94,40 @@ pub fn check_keys_playing_game(
     mut players: ResMut<Players>,
     mut queue_unit_msg: MessageWriter<QueueUnitMsg>,
     mut play_audio_msg: MessageWriter<PlayAudioMsg>,
+    mut pressed: Local<bool>,
 ) {
     // Change unit direction
-    if keyboard.just_released(KeyCode::ArrowLeft) {
-        players.me.direction = PlayerDirection::Any;
-    } else if keyboard.just_released(KeyCode::ArrowRight) {
-        players.me.direction = PlayerDirection::Mid;
-    } else if keyboard.just_released(KeyCode::ArrowUp) {
-        players.me.direction = PlayerDirection::Top;
-    } else if keyboard.just_released(KeyCode::ArrowDown) {
-        players.me.direction = PlayerDirection::Bot;
+    if !keyboard.any_pressed([KeyCode::ControlLeft, KeyCode::ControlRight]) {
+        if keyboard.just_released(KeyCode::ArrowLeft) {
+            players.me.direction = PlayerDirection::Any;
+        } else if keyboard.just_released(KeyCode::ArrowRight) {
+            if keyboard.pressed(KeyCode::ArrowUp) {
+                *pressed = true;
+                players.me.direction = PlayerDirection::TopMid;
+            } else if keyboard.pressed(KeyCode::ArrowDown) {
+                *pressed = true;
+                players.me.direction = PlayerDirection::MidBot;
+            } else if !*pressed {
+                players.me.direction = PlayerDirection::Mid;
+            };
+        } else if keyboard.just_released(KeyCode::ArrowUp) {
+            if keyboard.pressed(KeyCode::ArrowRight) {
+                *pressed = true;
+                players.me.direction = PlayerDirection::TopMid;
+            } else if !*pressed {
+                players.me.direction = PlayerDirection::Top;
+            };
+        } else if keyboard.just_released(KeyCode::ArrowDown) {
+            if keyboard.pressed(KeyCode::ArrowRight) {
+                *pressed = true;
+                players.me.direction = PlayerDirection::MidBot;
+            } else if !*pressed {
+                players.me.direction = PlayerDirection::Bot;
+            };
+        } else if !keyboard.any_pressed([KeyCode::ArrowUp, KeyCode::ArrowRight, KeyCode::ArrowDown])
+        {
+            *pressed = false;
+        }
     }
 
     // Spawn units

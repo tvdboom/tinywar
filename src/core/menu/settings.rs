@@ -5,7 +5,6 @@ use bevy::prelude::*;
 use crate::core::assets::WorldAssets;
 use crate::core::audio::ChangeAudioMsg;
 use crate::core::constants::*;
-use crate::core::map::map::MapSize;
 use crate::core::menu::utils::add_text;
 use crate::core::settings::{PlayerColor, Settings};
 use crate::core::states::AudioState;
@@ -18,9 +17,6 @@ pub enum SettingsBtn {
     Purple,
     Red,
     Yellow,
-    Small,
-    Medium,
-    Large,
     Mute,
     Sound,
     Music,
@@ -35,9 +31,6 @@ fn match_setting(button: &SettingsBtn, settings: &Settings) -> bool {
         SettingsBtn::Purple => settings.color == PlayerColor::Purple,
         SettingsBtn::Red => settings.color == PlayerColor::Red,
         SettingsBtn::Yellow => settings.color == PlayerColor::Yellow,
-        SettingsBtn::Small => settings.map_size == MapSize::Small,
-        SettingsBtn::Medium => settings.map_size == MapSize::Medium,
-        SettingsBtn::Large => settings.map_size == MapSize::Large,
         SettingsBtn::Mute => settings.audio == AudioState::Mute,
         SettingsBtn::Sound => settings.audio == AudioState::Sound,
         SettingsBtn::Music => settings.audio == AudioState::Music,
@@ -71,9 +64,6 @@ pub fn on_click_label_button(
         SettingsBtn::Purple => settings.color = PlayerColor::Purple,
         SettingsBtn::Red => settings.color = PlayerColor::Red,
         SettingsBtn::Yellow => settings.color = PlayerColor::Yellow,
-        SettingsBtn::Small => settings.map_size = MapSize::Small,
-        SettingsBtn::Medium => settings.map_size = MapSize::Medium,
-        SettingsBtn::Large => settings.map_size = MapSize::Large,
         SettingsBtn::Mute => {
             settings.audio = AudioState::Mute;
             change_audio_msg.write(ChangeAudioMsg(Some(AudioState::Mute)));

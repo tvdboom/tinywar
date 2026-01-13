@@ -17,10 +17,12 @@ mod utils;
 use crate::core::audio::*;
 use crate::core::camera::*;
 use crate::core::constants::WATER_COLOR;
+use crate::core::map::map::Map;
 use crate::core::map::systems::{draw_map, MapCmp};
 use crate::core::map::ui::systems::{draw_ui, update_ui};
 use crate::core::mechanics::queue::*;
 use crate::core::mechanics::spawn::*;
+use crate::core::mechanics::walk::move_units;
 use crate::core::menu::buttons::MenuCmp;
 use crate::core::menu::systems::*;
 use crate::core::network::*;
@@ -29,7 +31,9 @@ use crate::core::persistence::{load_game, save_game};
 use crate::core::persistence::{LoadGameMsg, SaveGameMsg};
 use crate::core::settings::Settings;
 use crate::core::states::{AppState, AudioState, GameState};
-use crate::core::systems::{check_keys_game, check_keys_menu, check_keys_playing_game, on_resize_system};
+use crate::core::systems::{
+    check_keys_game, check_keys_menu, check_keys_playing_game, on_resize_system,
+};
 use crate::core::units::systems::update_units;
 use crate::core::utils::despawn;
 use bevy::prelude::*;
@@ -82,7 +86,8 @@ impl Plugin for GamePlugin {
             .insert_resource(ClearColor(WATER_COLOR))
             .init_resource::<Ip>()
             .init_resource::<PlayingAudio>()
-            .init_resource::<Settings>();
+            .init_resource::<Settings>()
+            .init_resource::<Map>();
 
         // Sets
         configure_stages!(app, InGameSet, in_state(AppState::Game));
@@ -152,7 +157,13 @@ impl Plugin for GamePlugin {
             .add_systems(Update, queue_message.in_set(InPlayingOrPausedSet))
             .add_systems(
                 Update,
-                (queue_resolve, spawn_unit_message, spawn_building_message, update_units)
+                (
+                    queue_resolve,
+                    spawn_unit_message,
+                    spawn_building_message,
+                    update_units,
+                    move_units,
+                )
                     .in_set(InPlayingSet),
             )
             .add_systems(

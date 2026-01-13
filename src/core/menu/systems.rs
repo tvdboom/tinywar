@@ -16,7 +16,7 @@ use crate::core::menu::buttons::{
 use crate::core::menu::settings::{spawn_label, SettingsBtn};
 use crate::core::menu::utils::{add_root_node, add_text};
 use crate::core::network::{Host, Ip, ServerSendMsg};
-use crate::core::player::{Player, Players};
+use crate::core::player::{Player, Players, Side};
 use crate::core::settings::{PlayerColor, Settings};
 use crate::core::states::{AppState, GameState};
 use crate::core::units::buildings::BuildingName;
@@ -139,18 +139,6 @@ pub fn setup_menu(
                                         SettingsBtn::Purple,
                                         SettingsBtn::Red,
                                         SettingsBtn::Yellow,
-                                    ],
-                                    &settings,
-                                    &assets,
-                                    &window,
-                                );
-                                spawn_label(
-                                    parent,
-                                    "Map size",
-                                    vec![
-                                        SettingsBtn::Small,
-                                        SettingsBtn::Medium,
-                                        SettingsBtn::Large,
                                     ],
                                     &settings,
                                     &assets,
@@ -374,10 +362,8 @@ pub fn start_new_game_message(
             *server.clients_id().first().unwrap()
         };
 
-        let map = Map::new(&settings.map_size);
-
         // Spawn starting buildings
-        let positions = map.starting_positions();
+        let positions = Map::starting_positions();
         spawn_building_msg.write(SpawnBuildingMsg::new(
             0,
             BuildingName::default(),
@@ -392,10 +378,9 @@ pub fn start_new_game_message(
         ));
 
         commands.insert_resource(Host);
-        commands.insert_resource(map);
         commands.insert_resource(Players {
-            me: Player::new(0, settings.color),
-            enemy: Player::new(enemy_id, settings.enemy_color),
+            me: Player::new(0, settings.color, Side::Left),
+            enemy: Player::new(enemy_id, settings.enemy_color, Side::Right),
         });
         next_game_state.set(GameState::default());
         next_app_state.set(AppState::Game);

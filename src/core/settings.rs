@@ -1,4 +1,3 @@
-use crate::core::map::map::MapSize;
 use crate::core::states::AudioState;
 use bevy::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -40,7 +39,6 @@ impl PlayerColor {
 pub struct Settings {
     pub color: PlayerColor,
     pub enemy_color: PlayerColor,
-    pub map_size: MapSize,
     pub speed: f32,
     pub audio: AudioState,
     pub autosave: bool,
@@ -51,7 +49,6 @@ impl Default for Settings {
         Self {
             color: PlayerColor::Blue,
             enemy_color: PlayerColor::Red,
-            map_size: MapSize::Small,
             speed: 1.0,
             audio: AudioState::default(),
             autosave: true,

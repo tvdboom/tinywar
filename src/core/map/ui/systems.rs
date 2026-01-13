@@ -4,7 +4,7 @@ use crate::core::constants::MAX_QUEUE_LENGTH;
 use crate::core::map::systems::MapCmp;
 use crate::core::mechanics::queue::QueueUnitMsg;
 use crate::core::menu::utils::add_text;
-use crate::core::player::Players;
+use crate::core::player::{Players, Side};
 use crate::core::settings::{PlayerColor, Settings};
 use crate::core::states::GameState;
 use crate::core::units::units::{Unit, UnitName};
@@ -24,6 +24,9 @@ pub struct AdvanceBannerCmp(pub bool);
 
 #[derive(Component)]
 pub struct TextAdvanceBannerCmp;
+
+#[derive(Component)]
+pub struct DirectionCmp;
 
 #[derive(Component)]
 pub struct ShopButtonCmp(pub UnitName);
@@ -122,6 +125,35 @@ pub fn draw_ui(
             spawn(3 + enemy * 7, Val::Percent(45.), Some(false));
             spawn(5 + enemy * 7, Val::Auto, None);
             spawn(6 + enemy * 7, Val::Auto, None);
+        });
+
+    // Draw direction
+    commands
+        .spawn((
+            Node {
+                top: Val::Percent(5.),
+                left: Val::Percent(2.),
+                width: Val::Percent(9.),
+                height: Val::Percent(8.),
+                ..default()
+            },
+            ImageNode {
+                image: assets.image(players.me.direction.image()),
+                flip_y: players.me.direction.flip_y(),
+                ..default()
+            },
+            DirectionCmp,
+            UiCmp,
+            MapCmp,
+        ))
+        .observe(cursor::<Over>(SystemCursorIcon::Pointer))
+        .observe(cursor::<Out>(SystemCursorIcon::Default))
+        .observe(|event: On<Pointer<Click>>, mut players: ResMut<Players>| {
+            if event.button == PointerButton::Primary {
+                players.me.direction = players.me.direction.next();
+            } else if event.button == PointerButton::Secondary {
+                players.me.direction = players.me.direction.previous();
+            };
         });
 
     // Draw units
@@ -364,11 +396,12 @@ pub fn draw_ui(
 
 pub fn update_ui(
     unit_q: Query<(&Transform, &Unit)>,
+    mut direction_q: Query<&mut ImageNode, With<DirectionCmp>>,
     mut advance_q: Query<(Entity, &mut Node, &AdvanceBannerCmp)>,
     mut text_q: Query<&mut Text, With<TextAdvanceBannerCmp>>,
     mut label_q: Query<(&mut Text, &ShopLabelCmp), Without<TextAdvanceBannerCmp>>,
     mut queue_q: Query<(&mut Node, &mut SwordQueueCmp), Without<AdvanceBannerCmp>>,
-    mut images_q: Query<(Entity, &mut ImageNode, &QueueButtonCmp)>,
+    mut images_q: Query<(Entity, &mut ImageNode, &QueueButtonCmp), Without<DirectionCmp>>,
     mut progress_wrapper_q: Query<(Entity, &mut Visibility), With<QueueProgressWrapperCmp>>,
     mut progress_inner_q: Query<
         &mut Node,
@@ -386,42 +419,48 @@ pub fn update_ui(
     assets: Local<WorldAssets>,
 ) {
     // Update the advance banner and shop labels
-    let (mut me, mut enemy) = (0., 0.);
+    let (mut me, mut enemy) = (50., 50.); // Start
     let mut counts = HashMap::new();
     for (unit_t, unit) in unit_q.iter() {
+        let x = unit_t.translation.x;
+
         if unit.color == players.me.color {
-            me += unit_t.translation.x;
+            me += match players.me.side {
+                Side::Left if x > 0. => x,
+                Side::Right if x < 0. => -x,
+                _ => 0.,
+            };
             *counts.entry(unit.name).or_insert(0) += 1;
         } else {
-            enemy -= unit_t.translation.x;
+            enemy += match players.enemy.side {
+                Side::Left if x > 0. => x,
+                Side::Right if x < 0. => -x,
+                _ => 0.,
+            };
         }
     }
 
-    let frac = if me > 0. || enemy > 0. {
-        me.min(enemy) / me.max(enemy)
+    let total = me + enemy;
+    let me_score = if total > 0. {
+        me / total
     } else {
-        1.0
+        0.5
     };
-
-    let (frac_me, frac_enemy) = if me > enemy {
-        (1. + frac, frac / 45.)
-    } else {
-        (frac, frac)
-    };
+    let enemy_score = 1. - me_score;
 
     for (entity, mut node, banner) in &mut advance_q {
         let n = if banner.0 {
-            frac_me
+            me_score
         } else {
-            frac_enemy
+            enemy_score
         };
 
-        node.width = Val::Percent(45. * n);
+        node.width = Val::Percent(90. * n);
 
         if let Ok(children) = children_q.get(entity) {
             for &child in children {
                 if let Ok(mut text) = text_q.get_mut(child) {
-                    text.0 = format!("{:.0}%", 50. * n);
+                    text.0 = format!("{:.0}%", 100. * n);
                 }
             }
         }
@@ -429,6 +468,12 @@ pub fn update_ui(
 
     for (mut text, label) in label_q.iter_mut() {
         text.0 = counts.get(&label.0).unwrap_or(&0).to_string();
+    }
+
+    // Update the direction
+    for mut image in &mut direction_q {
+        image.image = assets.image(players.me.direction.image());
+        image.flip_y = players.me.direction.flip_y()
     }
 
     // Update the queue
