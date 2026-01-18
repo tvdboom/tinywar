@@ -1,35 +1,59 @@
 use crate::core::assets::WorldAssets;
-use crate::core::constants::{
-    ARROW_ARC_HEIGHT, ARROW_MAX_DISTANCE, ARROW_SPEED, CAPPED_DELTA_SECS_SPEED,
-};
+use crate::core::constants::{ARROW_ON_GROUND_SECS, UNITS_Z};
 use crate::core::map::systems::MapCmp;
 use crate::core::mechanics::spawn::DespawnMsg;
-use crate::core::settings::Settings;
+use crate::core::settings::PlayerColor;
 use crate::core::units::units::{Action, Unit, UnitName};
 use bevy::prelude::*;
 use bevy_tweening::CycleCompletedEvent;
-use std::f32::consts::{FRAC_PI_4, PI};
+use std::f32::consts::FRAC_PI_4;
+use std::time::Duration;
 
 #[derive(Component)]
 pub struct Arrow {
-    pub target: Entity,
-    pub distance: f32,
+    pub color: PlayerColor,
+    pub damage: f32,
+    pub start: Vec3,
+    pub destination: Vec3,
+    pub total_distance: f32,
+    pub traveled: f32,
+    pub despawn_timer: Timer,
 }
 
 impl Arrow {
-    pub fn new(target: Entity) -> Self {
+    pub fn new(color: PlayerColor, damage: f32, start: Vec3, destination: Vec3) -> Self {
         Arrow {
-            target,
-            distance: 0.,
+            color,
+            damage,
+            start,
+            destination,
+            total_distance: start.distance(destination),
+            traveled: 0.,
+            despawn_timer: Timer::new(Duration::from_secs(ARROW_ON_GROUND_SECS), TimerMode::Once),
         }
     }
 }
 
-pub fn apply_damage(
+#[derive(Message)]
+pub struct ApplyDamageMsg {
+    pub entity: Entity,
+    pub damage: f32,
+}
+
+impl ApplyDamageMsg {
+    pub fn new(entity: Entity, damage: f32) -> Self {
+        ApplyDamageMsg {
+            entity,
+            damage,
+        }
+    }
+}
+
+pub fn resolve_attack(
     mut commands: Commands,
     mut unit_q: Query<(Entity, &Transform, &mut Unit)>,
     mut cycle_completed_msg: MessageReader<CycleCompletedEvent>,
-    mut despawn_msg: MessageWriter<DespawnMsg>,
+    mut apply_damage_msg: MessageWriter<ApplyDamageMsg>,
     assets: Local<WorldAssets>,
 ) {
     // Apply damage after the attacking animation finished
@@ -43,7 +67,7 @@ pub fn apply_damage(
         match unit.action {
             Action::Attack(e) | Action::Heal(e) => {
                 let action_finished =
-                    unit_q.get_mut(e).map_or(true, |(target_e, _, mut target)| {
+                    unit_q.get_mut(e).map_or(true, |(target_e, target_t, target)| {
                         if unit.name == UnitName::Archer {
                             // Archers don't apply damage but spawn arrows at the end of the animation
                             commands.spawn((
@@ -52,21 +76,23 @@ pub fn apply_damage(
                                     ..default()
                                 },
                                 Transform {
-                                    translation: unit_t.translation,
+                                    translation: unit_t.translation.with_z(UNITS_Z - 0.1),
                                     rotation: Quat::from_rotation_z(FRAC_PI_4),
                                     scale: unit_t.scale,
                                 },
-                                Arrow::new(target_e),
+                                Arrow::new(
+                                    unit.color,
+                                    unit.name.damage(),
+                                    unit_t.translation,
+                                    target_t.translation,
+                                ),
                                 MapCmp,
                             ));
 
                             return false;
                         }
 
-                        target.health = (target.health - unit.name.damage()).max(0.);
-                        if target.health == 0. {
-                            despawn_msg.write(DespawnMsg(target_e));
-                        }
+                        apply_damage_msg.write(ApplyDamageMsg::new(target_e, unit.name.damage()));
 
                         target.health <= 0. || target.health >= target.name.health()
                     });
@@ -82,41 +108,17 @@ pub fn apply_damage(
     }
 }
 
-pub fn move_arrows(
-    mut arrow_q: Query<(Entity, &mut Transform, &mut Arrow)>,
+pub fn apply_damage_message(
     mut unit_q: Query<(Entity, &mut Unit)>,
+    mut apply_damage_msg: MessageReader<ApplyDamageMsg>,
     mut despawn_msg: MessageWriter<DespawnMsg>,
-    settings: Res<Settings>,
-    time: Res<Time>,
 ) {
-    for (arrow_e, mut arrow_t, mut arrow) in &mut arrow_q {
-        // Calculate direction based on current rotation
-        let direction = arrow_t.rotation * Vec3::X;
-
-        // Move arrow along its direction
-        let base_movement = direction.normalize()
-            * ARROW_SPEED
-            * settings.speed
-            * time.delta_secs().min(CAPPED_DELTA_SECS_SPEED);
-
-        // Add vertical arc component
-        let progress = (arrow.distance / ARROW_MAX_DISTANCE).min(1.0);
-        let arc_velocity = (progress * PI).cos() * ARROW_ARC_HEIGHT * PI / ARROW_MAX_DISTANCE;
-        let arc_movement = Vec3::Y * arc_velocity * time.delta_secs();
-
-        arrow_t.translation += base_movement + arc_movement;
-
-        // Update rotation based on velocity
-        let velocity = base_movement + arc_movement;
-        let traveled = velocity.length();
-        if traveled > 0.01 {
-            let angle = velocity.y.atan2(velocity.x);
-            arrow_t.rotation = Quat::from_rotation_z(angle);
-        }
-
-        arrow.distance += traveled;
-        if arrow.distance > ARROW_MAX_DISTANCE {
-            despawn_msg.write(DespawnMsg(arrow_e));
+    for msg in apply_damage_msg.read() {
+        if let Ok((unit_e, mut unit)) = unit_q.get_mut(msg.entity) {
+            unit.health = (unit.health - msg.damage).max(0.);
+            if unit.health == 0. {
+                despawn_msg.write(DespawnMsg(unit_e));
+            }
         }
     }
 }

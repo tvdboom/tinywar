@@ -4,7 +4,6 @@ use crate::core::map::utils::SpriteFrameLens;
 use crate::core::mechanics::spawn::{UnitHealthCmp, UnitHealthWrapperCmp};
 use crate::core::units::units::{Action, Unit};
 use crate::utils::NameFromEnum;
-use bevy::ecs::entity::Entities;
 use bevy::prelude::*;
 use bevy_tweening::{RepeatCount, Tween, TweenAnim};
 use std::time::Duration;
@@ -17,7 +16,6 @@ pub struct HealingAnimCmp;
 
 pub fn update_units(
     mut commands: Commands,
-    entities: &Entities,
     mut unit_q: Query<(Entity, &Transform, &mut Sprite, Option<&IsHealing>, &mut Unit)>,
     entity_q: Query<&Transform, Without<UnitHealthCmp>>,
     mut wrapper_q: Query<(Entity, &mut Visibility), With<UnitHealthWrapperCmp>>,
@@ -90,7 +88,6 @@ pub fn update_units(
                             custom_size: Some(Vec2::splat(UNIT_DEFAULT_SIZE)),
                             ..default()
                         },
-                        HealingAnimCmp,
                         TweenAnim::new(
                             Tween::new(
                                 EaseFunction::Linear,
@@ -99,6 +96,7 @@ pub fn update_units(
                             )
                             .with_repeat_count(RepeatCount::Infinite),
                         ),
+                        HealingAnimCmp,
                     ));
                 });
             }
@@ -106,7 +104,7 @@ pub fn update_units(
             commands
                 .entity(unit_e)
                 .remove::<IsHealing>()
-                .remove_recursive::<Children, HealingAnimCmp>();
+                .remove_recursive::<Children, (Sprite, TweenAnim, HealingAnimCmp)>();
         }
 
         // Update the health bar

@@ -14,7 +14,7 @@ pub enum UnitName {
     Warrior,
     Lancer,
     Archer,
-    Monk,
+    Priest,
 }
 
 impl UnitName {
@@ -23,7 +23,7 @@ impl UnitName {
             UnitName::Warrior => KeyCode::KeyZ,
             UnitName::Lancer => KeyCode::KeyX,
             UnitName::Archer => KeyCode::KeyC,
-            UnitName::Monk => KeyCode::KeyV,
+            UnitName::Priest => KeyCode::KeyV,
         }
     }
 
@@ -33,7 +33,7 @@ impl UnitName {
             UnitName::Warrior => 2000,
             UnitName::Lancer => 2000,
             UnitName::Archer => 3000,
-            UnitName::Monk => 4000,
+            UnitName::Priest => 4000,
         }
     }
 
@@ -64,7 +64,7 @@ impl UnitName {
                 Action::Attack(_) => 8,
                 _ => unreachable!(),
             },
-            UnitName::Monk => match action {
+            UnitName::Priest => match action {
                 Action::Idle => 6,
                 Action::Run => 4,
                 Action::Heal(_) => 11,
@@ -78,7 +78,7 @@ impl UnitName {
             UnitName::Warrior => 150.,
             UnitName::Lancer => 100.,
             UnitName::Archer => 60.,
-            UnitName::Monk => 40.,
+            UnitName::Priest => 40.,
         }
     }
 
@@ -87,24 +87,24 @@ impl UnitName {
             UnitName::Warrior => 20.,
             UnitName::Lancer => 25.,
             UnitName::Archer => 15.,
-            UnitName::Monk => 10.,
+            UnitName::Priest => 10.,
         }
     }
 
     pub fn range(&self) -> f32 {
         match self {
-            UnitName::Archer => 2.,
-            UnitName::Monk => 3.,
+            UnitName::Archer => 4.,
+            UnitName::Priest => 4.,
             _ => 1.,
         }
     }
 
     pub fn damage(&self) -> f32 {
         match self {
-            UnitName::Warrior => 20.,
+            UnitName::Warrior => 15.,
             UnitName::Lancer => 15.,
             UnitName::Archer => 10.,
-            UnitName::Monk => -10., // This is the healing done (negative damage)
+            UnitName::Priest => -30., // This is the healing done (negative damage)
         }
     }
 }
