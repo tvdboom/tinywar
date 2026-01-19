@@ -98,32 +98,37 @@ pub fn check_keys_playing_game(
 ) {
     // Change unit direction
     if !keyboard.any_pressed([KeyCode::ControlLeft, KeyCode::ControlRight]) {
+        let mut new_direction = None;
+
         if keyboard.just_released(KeyCode::ArrowLeft) {
-            players.me.direction = PlayerDirection::Any;
+            new_direction = Some(PlayerDirection::Any);
         } else if keyboard.just_released(KeyCode::ArrowRight) {
-            if keyboard.pressed(KeyCode::ArrowUp) {
-                *pressed = true;
-                players.me.direction = PlayerDirection::TopMid;
-            } else if keyboard.pressed(KeyCode::ArrowDown) {
-                *pressed = true;
-                players.me.direction = PlayerDirection::MidBot;
-            } else if !*pressed {
-                players.me.direction = PlayerDirection::Mid;
-            };
+            new_direction = Some(
+                match (keyboard.pressed(KeyCode::ArrowUp), keyboard.pressed(KeyCode::ArrowDown)) {
+                    (true, _) => PlayerDirection::TopMid,
+                    (_, true) => PlayerDirection::MidBot,
+                    _ => PlayerDirection::Mid,
+                },
+            );
         } else if keyboard.just_released(KeyCode::ArrowUp) {
-            if keyboard.pressed(KeyCode::ArrowRight) {
-                *pressed = true;
-                players.me.direction = PlayerDirection::TopMid;
-            } else if !*pressed {
-                players.me.direction = PlayerDirection::Top;
-            };
+            new_direction = Some(if keyboard.pressed(KeyCode::ArrowRight) {
+                PlayerDirection::TopMid
+            } else {
+                PlayerDirection::Top
+            });
         } else if keyboard.just_released(KeyCode::ArrowDown) {
-            if keyboard.pressed(KeyCode::ArrowRight) {
-                *pressed = true;
-                players.me.direction = PlayerDirection::MidBot;
-            } else if !*pressed {
-                players.me.direction = PlayerDirection::Bot;
-            };
+            new_direction = Some(if keyboard.pressed(KeyCode::ArrowRight) {
+                PlayerDirection::MidBot
+            } else {
+                PlayerDirection::Bot
+            });
+        }
+
+        if let Some(direction) = new_direction {
+            if players.me.direction != direction {
+                play_audio_msg.write(PlayAudioMsg::new("click"));
+                players.me.direction = direction;
+            }
         } else if !keyboard.any_pressed([KeyCode::ArrowUp, KeyCode::ArrowRight, KeyCode::ArrowDown])
         {
             *pressed = false;

@@ -95,7 +95,7 @@ impl Map {
         Self::STARTING_POSITIONS.iter().map(|p| Self::tile_to_world(p)).collect()
     }
 
-    pub fn get_neighbors(pos: &TilePos) -> Vec<TilePos> {
+    pub fn get_neighbors(pos: &TilePos, check_walkable: bool) -> Vec<TilePos> {
         let moves = [(-1, 0), (1, 0), (0, -1), (0, 1), (-1, -1), (-1, 1), (1, -1), (1, 1)];
 
         moves
@@ -111,16 +111,18 @@ impl Map {
 
                 let new_pos = TilePos::new(x as u32, y as u32);
 
-                if !Self::is_walkable(&new_pos) {
-                    return None;
-                }
-
-                // If diagonal, prevent cutting corners
-                if dx != 0 && dy != 0 {
-                    let pos1 = TilePos::new((pos.x as i32 + dx) as u32, pos.y); // Horizontal
-                    let pos2 = TilePos::new(pos.x, (pos.y as i32 + dy) as u32); // Vertical
-                    if !Self::is_walkable(&pos1) || !Self::is_walkable(&pos2) {
+                if check_walkable {
+                    if !Self::is_walkable(&new_pos) {
                         return None;
+                    }
+
+                    // If diagonal, prevent cutting corners
+                    if dx != 0 && dy != 0 {
+                        let pos1 = TilePos::new((pos.x as i32 + dx) as u32, pos.y); // Horizontal
+                        let pos2 = TilePos::new(pos.x, (pos.y as i32 + dy) as u32); // Vertical
+                        if !Self::is_walkable(&pos1) || !Self::is_walkable(&pos2) {
+                            return None;
+                        }
                     }
                 }
 
@@ -136,7 +138,9 @@ impl Map {
     fn find_path(start: &TilePos, end: &TilePos) -> Vec<TilePos> {
         astar(
             start,
-            |pos| Self::get_neighbors(pos).into_iter().map(|pos| (pos, 1)).collect::<Vec<_>>(),
+            |pos| {
+                Self::get_neighbors(pos, true).into_iter().map(|pos| (pos, 1)).collect::<Vec<_>>()
+            },
             |pos| (start.x as i32 - pos.x as i32).abs() + (start.y as i32 - pos.y as i32).abs(),
             |pos| pos == end,
         )

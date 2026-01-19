@@ -1,4 +1,4 @@
-use crate::core::constants::{ARROW_SPEED, CAPPED_DELTA_SECS_SPEED, RADIUS};
+use crate::core::constants::{ARROW_SPEED, CAPPED_DELTA_SECS_SPEED, RADIUS, UNITS_Z};
 use crate::core::map::map::Map;
 use crate::core::mechanics::combat::{ApplyDamageMsg, Arrow};
 use crate::core::mechanics::spawn::DespawnMsg;
@@ -29,7 +29,7 @@ fn get_tiles_at_distance(pos: &TilePos, distance: u32) -> Vec<TilePos> {
             continue;
         }
 
-        for neighbor in Map::get_neighbors(&current) {
+        for neighbor in Map::get_neighbors(&current, false) {
             if visited.insert(neighbor) {
                 queue.push_back((neighbor, dist + 1));
             }
@@ -84,10 +84,10 @@ fn move_unit(
     for tile in std::iter::once(tile).chain(get_tiles_at_distance(&tile, 2)) {
         if let Some(units) = positions.get(&tile) {
             for (other_e, other_pos, other) in units {
+                let distance = unit_t.translation.distance(*other_pos);
+
                 // Skip if self or too far to interact
-                if unit_e == *other_e
-                    || unit_t.translation.distance(*other_pos) > unit.name.range() * RADIUS
-                {
+                if unit_e == *other_e || distance > unit.name.range() * RADIUS {
                     continue;
                 }
 
@@ -98,7 +98,10 @@ fn move_unit(
                     (UnitName::Priest, true) if other.health < other.name.health() => {
                         Action::Heal(*other_e)
                     },
-                    (u, false) if u != UnitName::Priest => Action::Attack(*other_e),
+                    (u, false) if u == UnitName::Archer => Action::Attack(*other_e),
+                    (u, false) if u != UnitName::Priest && distance <= 2. * RADIUS => {
+                        Action::Attack(*other_e)
+                    },
                     _ => continue,
                 };
 
@@ -160,6 +163,9 @@ fn move_arrow(
                 min: Vec2::ZERO,
                 max: Vec2::new(image.width() as f32 * 0.65, image.height() as f32),
             });
+
+            // Place ground arrows behind units
+            arrow_t.translation.z = UNITS_Z - 0.1;
         }
 
         arrow.despawn_timer.tick(scale_duration(time.delta(), settings.speed));
@@ -181,7 +187,7 @@ fn move_arrow(
 
     // Check if the arrow hit someone (in this or adjacent tiles)
     let tile = Map::world_to_tile(&arrow_t.translation);
-    for tile in std::iter::once(tile).chain(Map::get_neighbors(&tile)) {
+    for tile in std::iter::once(tile).chain(Map::get_neighbors(&tile, false)) {
         if let Some(units) = positions.get(&tile) {
             for (other_e, other_pos, other_unit) in units {
                 if other_unit.color != arrow.color

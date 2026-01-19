@@ -69,6 +69,7 @@ impl FromWorld for WorldAssets {
         let audio = HashMap::from([
             ("music", assets.load("audio/music.ogg")),
             ("button", assets.load("audio/button.ogg")),
+            ("click", assets.load("audio/click.ogg")),
             ("error", assets.load("audio/error.ogg")),
         ]);
 

@@ -1,5 +1,5 @@
 use crate::core::assets::WorldAssets;
-use crate::core::constants::{ARROW_ON_GROUND_SECS, UNITS_Z};
+use crate::core::constants::{ARROW_ON_GROUND_SECS, RADIUS, UNITS_Z};
 use crate::core::map::systems::MapCmp;
 use crate::core::mechanics::spawn::DespawnMsg;
 use crate::core::settings::PlayerColor;
@@ -66,40 +66,42 @@ pub fn resolve_attack(
 
         match unit.action {
             Action::Attack(e) | Action::Heal(e) => {
-                let action_finished =
-                    unit_q.get_mut(e).map_or(true, |(target_e, target_t, target)| {
-                        if unit.name == UnitName::Archer {
-                            // Archers don't apply damage but spawn arrows at the end of the animation
-                            commands.spawn((
-                                Sprite {
-                                    image: assets.image("arrow"),
-                                    ..default()
-                                },
-                                Transform {
-                                    translation: unit_t.translation.with_z(UNITS_Z - 0.1),
-                                    rotation: Quat::from_rotation_z(FRAC_PI_4),
-                                    scale: unit_t.scale,
-                                },
-                                Arrow::new(
-                                    unit.color,
-                                    unit.name.damage(),
-                                    unit_t.translation,
-                                    target_t.translation,
-                                ),
-                                MapCmp,
-                            ));
+                if let Ok((target_e, target_t, _)) = unit_q.get_mut(e) {
+                    if unit.name == UnitName::Archer {
+                        // Archers don't apply damage but spawn arrows at the end of the animation
+                        let start_pos = Vec3::new(
+                            unit_t.translation.x
+                                + 0.25
+                                    * RADIUS
+                                    * if target_t.translation.x < unit_t.translation.x {
+                                        -1.
+                                    } else {
+                                        1.
+                                    },
+                            unit_t.translation.y + 0.25 * RADIUS,
+                            UNITS_Z + 0.1,
+                        );
 
-                            return false;
-                        }
-
+                        commands.spawn((
+                            Sprite {
+                                image: assets.image("arrow"),
+                                ..default()
+                            },
+                            Transform {
+                                translation: start_pos,
+                                rotation: Quat::from_rotation_z(FRAC_PI_4),
+                                scale: unit_t.scale,
+                            },
+                            Arrow::new(
+                                unit.color,
+                                unit.name.damage(),
+                                start_pos,
+                                target_t.translation,
+                            ),
+                            MapCmp,
+                        ));
+                    } else {
                         apply_damage_msg.write(ApplyDamageMsg::new(target_e, unit.name.damage()));
-
-                        target.health <= 0. || target.health >= target.name.health()
-                    });
-
-                if action_finished {
-                    if let Ok((_, _, mut unit)) = unit_q.get_mut(msg.anim_entity) {
-                        unit.action = Action::Idle;
                     }
                 }
             },
@@ -115,7 +117,7 @@ pub fn apply_damage_message(
 ) {
     for msg in apply_damage_msg.read() {
         if let Ok((unit_e, mut unit)) = unit_q.get_mut(msg.entity) {
-            unit.health = (unit.health - msg.damage).max(0.);
+            unit.health = (unit.health - msg.damage).clamp(0., unit.name.health());
             if unit.health == 0. {
                 despawn_msg.write(DespawnMsg(unit_e));
             }

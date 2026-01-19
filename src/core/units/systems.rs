@@ -4,6 +4,7 @@ use crate::core::map::utils::SpriteFrameLens;
 use crate::core::mechanics::spawn::{UnitHealthCmp, UnitHealthWrapperCmp};
 use crate::core::units::units::{Action, Unit};
 use crate::utils::NameFromEnum;
+use bevy::platform::collections::HashMap;
 use bevy::prelude::*;
 use bevy_tweening::{RepeatCount, Tween, TweenAnim};
 use std::time::Duration;
@@ -17,12 +18,16 @@ pub struct HealingAnimCmp;
 pub fn update_units(
     mut commands: Commands,
     mut unit_q: Query<(Entity, &Transform, &mut Sprite, Option<&IsHealing>, &mut Unit)>,
-    entity_q: Query<&Transform, Without<UnitHealthCmp>>,
+    healing_q: Query<&HealingAnimCmp>,
     mut wrapper_q: Query<(Entity, &mut Visibility), With<UnitHealthWrapperCmp>>,
     mut health_q: Query<(&mut Transform, &mut Sprite), (With<UnitHealthCmp>, Without<Unit>)>,
     children_q: Query<&Children>,
     assets: Local<WorldAssets>,
 ) {
+    // Collect health and positions from units
+    let units: HashMap<Entity, (Vec3, Unit)> =
+        unit_q.iter().map(|(e, t, _, _, u)| (e, (t.translation, *u))).collect();
+
     // Get the entities of the units that are being healed
     let healed: Vec<Entity> = unit_q
         .iter()
@@ -36,17 +41,30 @@ pub fn update_units(
         .collect();
 
     for (unit_e, unit_t, mut unit_s, heal, mut unit) in &mut unit_q {
-        // Check the action receiver still exists and is in range, else go back to idle
+        // Check that the action receiver still exists and is in range, else go back to idle
         unit.action = match unit.action {
-            Action::Attack(e) | Action::Heal(e)
-                if entity_q.get(e).is_ok_and(|t| {
-                    unit_t.translation.distance(t.translation) <= unit.name.range() * RADIUS
-                }) =>
-            {
-                unit.action
-            },
-            Action::Attack(_) | Action::Heal(_) => Action::Idle,
-            a => a,
+            Action::Attack(e) => units
+                .get(&e)
+                .filter(|(pos, _)| unit_t.translation.distance(*pos) <= unit.name.range() * RADIUS)
+                .map(|(pos, _)| {
+                    unit_s.flip_x = pos.x < unit_t.translation.x;
+                    unit.action
+                })
+                .unwrap_or(Action::Idle),
+
+            Action::Heal(e) => units
+                .get(&e)
+                .filter(|(pos, u)| {
+                    unit_t.translation.distance(*pos) <= unit.name.range() * RADIUS
+                        && u.health < u.name.health()
+                })
+                .map(|(pos, _)| {
+                    unit_s.flip_x = pos.x < unit_t.translation.x;
+                    unit.action
+                })
+                .unwrap_or(Action::Idle),
+
+            _ => unit.action,
         };
 
         // Update the action animation
@@ -101,10 +119,15 @@ pub fn update_units(
                 });
             }
         } else if heal.is_some() {
-            commands
-                .entity(unit_e)
-                .remove::<IsHealing>()
-                .remove_recursive::<Children, (Sprite, TweenAnim, HealingAnimCmp)>();
+            // Remove the healing animation from the entity
+            for child in children_q.iter_descendants(unit_e) {
+                if healing_q.get(child).is_ok() {
+                    commands.entity(child).despawn();
+                }
+            }
+
+            // Remove the marker from the unit
+            commands.entity(unit_e).remove::<IsHealing>();
         }
 
         // Update the health bar

@@ -46,7 +46,7 @@ jobs:
       - name: Download artifact
         uses: actions/download-artifact@v4
         with:
-          name: ${{ env.GAME_NAME }}-zip
+          name: ${{ env.GAME_NAME }}-windows
           path: .
 
       - name: Deploy to itch.io
@@ -56,7 +56,7 @@ jobs:
           CHANNEL: windows
           ITCH_GAME: ${{ env.GAME_NAME }}
           ITCH_USER: tvdboom
-          PACKAGE: ${{ env.GAME_NAME }}.zip
+          PACKAGE: ${{ env.GAME_NAME }}-windows.zip
 
   build-deploy-wasm:
     name: Build WASM

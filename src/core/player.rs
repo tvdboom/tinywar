@@ -14,7 +14,7 @@ pub enum Side {
     Right,
 }
 
-#[derive(Clone, Copy, Debug, Default, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Serialize, Deserialize)]
 pub enum PlayerDirection {
     #[default]
     Any,

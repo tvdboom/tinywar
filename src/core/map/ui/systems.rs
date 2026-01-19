@@ -69,6 +69,7 @@ pub fn draw_ui(
                 flex_direction: FlexDirection::Row,
                 ..default()
             },
+            Pickable::IGNORE,
             UiCmp,
             MapCmp,
         ))
@@ -151,13 +152,19 @@ pub fn draw_ui(
         ))
         .observe(cursor::<Over>(SystemCursorIcon::Pointer))
         .observe(cursor::<Out>(SystemCursorIcon::Default))
-        .observe(|event: On<Pointer<Click>>, mut players: ResMut<Players>| {
-            if event.button == PointerButton::Primary {
-                players.me.direction = players.me.direction.next();
-            } else if event.button == PointerButton::Secondary {
-                players.me.direction = players.me.direction.previous();
-            };
-        });
+        .observe(
+            |event: On<Pointer<Click>>,
+             mut players: ResMut<Players>,
+             mut play_audio_msg: MessageWriter<PlayAudioMsg>| {
+                if event.button == PointerButton::Primary {
+                    players.me.direction = players.me.direction.next();
+                    play_audio_msg.write(PlayAudioMsg::new("click"));
+                } else if event.button == PointerButton::Secondary {
+                    players.me.direction = players.me.direction.previous();
+                    play_audio_msg.write(PlayAudioMsg::new("click"));
+                };
+            },
+        );
 
     // Draw units
     let texture = assets.texture("small ribbons");
@@ -174,6 +181,7 @@ pub fn draw_ui(
                 justify_content: JustifyContent::Center,
                 ..default()
             },
+            Pickable::IGNORE,
             UiCmp,
             MapCmp,
         ))
@@ -286,6 +294,7 @@ pub fn draw_ui(
                 justify_content: JustifyContent::Start,
                 ..default()
             },
+            Pickable::IGNORE,
             UiCmp,
             MapCmp,
         ))

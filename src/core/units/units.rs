@@ -18,22 +18,41 @@ pub enum UnitName {
 }
 
 impl UnitName {
+    pub fn description(&self) -> &'static str {
+        match self {
+            UnitName::Warrior => {
+                "\
+                The warrior is a balanced front-line fighter with solid health and damage. \
+                With moderate speed and close-range attacks, warriors excel at holding the \
+                line and engaging enemies in direct combat."
+            },
+            UnitName::Lancer => {
+                "\
+                Lancers are swift and deadly units with. They sacrifice some durability for \
+                superior speed and reduced spawning times, making them excellent for quick \
+                strikes against enemy formations."
+            },
+            UnitName::Archer => {
+                "\
+                Archers have low health and damage, but shoot fast arrows at enemies at a \
+                distance. Their exceptional range allows them to harass foes from safety, \
+                though they're vulnerable in close combat and need protection from melee units."
+            },
+            UnitName::Priest => {
+                "\
+                Priests heal damaged units over a range. A priest cannot attack nor heal himself. \
+                These fragile support units are slow-moving and defenseless, but their powerful \
+                healing can turn the tide of battle by keeping your army in fighting condition."
+            },
+        }
+    }
+
     pub fn key(&self) -> KeyCode {
         match self {
             UnitName::Warrior => KeyCode::KeyZ,
             UnitName::Lancer => KeyCode::KeyX,
             UnitName::Archer => KeyCode::KeyC,
             UnitName::Priest => KeyCode::KeyV,
-        }
-    }
-
-    /// Spawning time in milliseconds
-    pub fn spawn_duration(&self) -> u64 {
-        match self {
-            UnitName::Warrior => 2000,
-            UnitName::Lancer => 2000,
-            UnitName::Archer => 3000,
-            UnitName::Priest => 4000,
         }
     }
 
@@ -61,7 +80,7 @@ impl UnitName {
             UnitName::Archer => match action {
                 Action::Idle => 6,
                 Action::Run => 4,
-                Action::Attack(_) => 8,
+                Action::Attack(_) => 6, // Skip last 2 frames to spawn arrow at end of animation
                 _ => unreachable!(),
             },
             UnitName::Priest => match action {
@@ -70,6 +89,16 @@ impl UnitName {
                 Action::Heal(_) => 11,
                 _ => unreachable!(),
             },
+        }
+    }
+
+    /// Spawning time in milliseconds
+    pub fn spawn_duration(&self) -> u64 {
+        match self {
+            UnitName::Warrior => 2000,
+            UnitName::Lancer => 2000,
+            UnitName::Archer => 3000,
+            UnitName::Priest => 4000,
         }
     }
 
