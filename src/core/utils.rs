@@ -2,6 +2,8 @@ use bevy::prelude::*;
 use bevy::window::{CursorIcon, SystemCursorIcon};
 use std::fmt::Debug;
 
+pub type ClientId = u64;
+
 /// Generic system that despawns all entities with a specific component
 pub fn despawn<T: Component>(mut commands: Commands, query_c: Query<Entity, With<T>>) {
     for entity in &query_c {

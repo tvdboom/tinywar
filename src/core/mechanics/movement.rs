@@ -19,7 +19,7 @@ fn get_tiles_at_distance(pos: &TilePos, d: u32) -> HashSet<TilePos> {
 }
 
 /// Return the next tile to walk to, which is the one following the closest tile
-fn next_tile_on_path<'a>(pos: &Vec3, path: &'a Vec<TilePos>) -> &'a TilePos {
+fn next_tile_on_path<'a>(pos: &Vec3, path: &'a [TilePos]) -> &'a TilePos {
     path.iter()
         .enumerate()
         .min_by_key(|(_, tile)| {
@@ -58,7 +58,7 @@ fn move_unit(
     }
 
     let target_tile = next_tile_on_path(&unit_t.translation, &path);
-    let target_pos = Map::tile_to_world(&target_tile).extend(unit_t.translation.z);
+    let target_pos = Map::tile_to_world(target_tile).extend(unit_t.translation.z);
 
     // Only check units in the surrounding
     for tile in get_tiles_at_distance(&tile, 4) {
@@ -79,7 +79,7 @@ fn move_unit(
                     (UnitName::Priest, true) if other.health < other.name.health() => {
                         Action::Heal(*other_e)
                     },
-                    (u, false) if u == UnitName::Archer => Action::Attack(*other_e),
+                    (u, false) if !u.is_melee() => Action::Attack(*other_e),
                     (u, false) if u.can_attack() && dist <= 2. * RADIUS => Action::Attack(*other_e),
                     _ => continue,
                 };

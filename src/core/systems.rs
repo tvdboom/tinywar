@@ -10,6 +10,7 @@ use crate::core::states::{AppState, GameState};
 use crate::core::units::units::UnitName;
 use bevy::prelude::*;
 use bevy::window::WindowResized;
+#[cfg(not(target_arch = "wasm32"))]
 use bevy_renet::renet::RenetServer;
 use bevy_tweening::{PlaybackState, TweenAnim};
 use strum::IntoEnumIterator;
@@ -28,7 +29,7 @@ pub fn on_resize_message(
 pub fn check_keys_menu(
     app_state: Res<State<AppState>>,
     game_state: Res<State<GameState>>,
-    server: Option<Res<RenetServer>>,
+    #[cfg(not(target_arch = "wasm32"))] server: Option<Res<RenetServer>>,
     mut start_new_game_msg: MessageWriter<StartNewGameMsg>,
     mut next_game_state: ResMut<NextState<GameState>>,
     mut next_app_state: ResMut<NextState<AppState>>,
@@ -59,6 +60,7 @@ pub fn check_keys_menu(
                 start_new_game_msg.write(StartNewGameMsg);
             },
             AppState::MultiPlayerMenu => next_app_state.set(AppState::Lobby),
+            #[cfg(not(target_arch = "wasm32"))]
             AppState::ConnectedLobby if server.is_some() => {
                 start_new_game_msg.write(StartNewGameMsg);
             },

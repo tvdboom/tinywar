@@ -5,7 +5,9 @@ mod constants;
 pub mod map;
 mod mechanics;
 mod menu;
+#[cfg(not(target_arch = "wasm32"))]
 mod network;
+#[cfg(not(target_arch = "wasm32"))]
 mod persistence;
 mod player;
 mod settings;
@@ -26,19 +28,19 @@ use crate::core::mechanics::queue::*;
 use crate::core::mechanics::spawn::*;
 use crate::core::menu::buttons::MenuCmp;
 use crate::core::menu::systems::*;
-use crate::core::network::*;
-use crate::core::persistence::{load_game, save_game};
-use crate::core::persistence::{LoadGameMsg, SaveGameMsg};
 use crate::core::settings::Settings;
 use crate::core::states::{AppState, GameState};
-use crate::core::systems::{
-    check_keys_game, check_keys_menu, check_keys_playing_game, on_resize_message, update_animations,
-};
+use crate::core::systems::*;
 use crate::core::units::systems::{update_buildings, update_units};
 use crate::core::utils::despawn;
 use bevy::prelude::*;
-use bevy_renet::renet::{RenetClient, RenetServer};
 use strum::IntoEnumIterator;
+#[cfg(not(target_arch = "wasm32"))]
+use {
+    crate::core::network::*,
+    crate::core::persistence::{load_game, save_game, LoadGameMsg, SaveGameMsg},
+    bevy_renet::renet::{RenetClient, RenetServer},
+};
 
 pub struct GamePlugin;
 
@@ -76,19 +78,14 @@ impl Plugin for GamePlugin {
             .add_message::<StopAudioMsg>()
             .add_message::<MuteAudioMsg>()
             .add_message::<ChangeAudioMsg>()
-            .add_message::<ServerSendMsg>()
-            .add_message::<ClientSendMsg>()
             .add_message::<StartNewGameMsg>()
-            .add_message::<SaveGameMsg>()
-            .add_message::<LoadGameMsg>()
-            .add_message::<QueueUnitMsg>()
+   .add_message::<QueueUnitMsg>()
             .add_message::<SpawnBuildingMsg>()
             .add_message::<SpawnUnitMsg>()
             .add_message::<DespawnMsg>()
             .add_message::<ApplyDamageMsg>()
             // Resources
             .insert_resource(ClearColor(WATER_COLOR))
-            .init_resource::<Ip>()
             .init_resource::<PlayingAudio>()
             .init_resource::<Settings>()
             .init_resource::<Map>();
@@ -126,31 +123,17 @@ impl Plugin for GamePlugin {
             .add_systems(
                 Update,
                 (toggle_audio, update_audio, play_audio, pause_audio, stop_audio, mute_audio),
-            )
-            //Networking
-            .add_systems(
-                First,
-                (
-                    server_receive_message.run_if(resource_exists::<RenetServer>),
-                    client_receive_message.run_if(resource_exists::<RenetClient>),
-                ),
-            )
-            .add_systems(Update, server_update.run_if(resource_exists::<RenetServer>))
-            .add_systems(
-                Last,
-                (
-                    server_send_message.run_if(resource_exists::<RenetServer>),
-                    client_send_message.run_if(resource_exists::<RenetClient>),
-                ),
             );
 
         // Menu
         for state in AppState::iter().filter(|s| *s != AppState::Game) {
             app.add_systems(OnEnter(state), setup_menu)
-                .add_systems(OnExit(state), (exit_multiplayer_lobby, despawn::<MenuCmp>));
+                .add_systems(OnExit(state), despawn::<MenuCmp>);
+
+            #[cfg(not(target_arch = "wasm32"))]
+            app.add_systems(OnExit(state), exit_multiplayer_lobby);
         }
-        app.add_systems(Update, update_ip.run_if(in_state(AppState::MultiPlayerMenu)))
-            .add_systems(Update, start_new_game_message.run_if(not(in_state(AppState::Game))));
+        app.add_systems(Update, start_new_game_message.run_if(not(in_state(AppState::Game))));
 
         app
             // Utilities
@@ -182,21 +165,42 @@ impl Plugin for GamePlugin {
                     .in_set(InPlayingSet),
             )
             .add_systems(Last, despawn_message.in_set(InPlayingSet))
-            .add_systems(
-                OnExit(AppState::Game),
-                (despawn::<MapCmp>, reset_camera, exit_multiplayer_lobby),
-            )
+            .add_systems(OnExit(AppState::Game), (despawn::<MapCmp>, reset_camera))
             .add_systems(OnEnter(GameState::GameMenu), setup_game_menu)
             .add_systems(OnExit(GameState::GameMenu), despawn::<MenuCmp>)
             .add_systems(OnEnter(GameState::EndGame), (despawn::<UiCmp>, setup_end_game))
             .add_systems(OnEnter(GameState::Settings), setup_game_settings)
             .add_systems(OnExit(GameState::Settings), despawn::<MenuCmp>);
 
-        // Persistence
         #[cfg(not(target_arch = "wasm32"))]
-        app.add_systems(
-            Update,
-            (load_game, save_game.run_if(resource_exists::<Host>).in_set(InGameSet)),
-        );
+        app
+            //Networking
+            .add_message::<ServerSendMsg>()
+            .add_message::<ClientSendMsg>()
+            .init_resource::<Ip>()
+            .add_systems(
+                First,
+                (
+                    server_receive_message.run_if(resource_exists::<RenetServer>),
+                    client_receive_message.run_if(resource_exists::<RenetClient>),
+                ),
+            )
+            .add_systems(Update, server_update.run_if(resource_exists::<RenetServer>))
+            .add_systems(Update, update_ip.run_if(in_state(AppState::MultiPlayerMenu)))
+            .add_systems(
+                Last,
+                (
+                    server_send_message.run_if(resource_exists::<RenetServer>),
+                    client_send_message.run_if(resource_exists::<RenetClient>),
+                ),
+            )
+            .add_systems(OnExit(AppState::Game), exit_multiplayer_lobby)
+            // Persistence
+            .add_message::<SaveGameMsg>()
+            .add_message::<LoadGameMsg>()
+            .add_systems(
+                Update,
+                (load_game, save_game.run_if(resource_exists::<Host>).in_set(InGameSet)),
+            );
     }
 }

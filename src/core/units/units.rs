@@ -93,7 +93,11 @@ impl UnitName {
     }
 
     pub fn can_attack(&self) -> bool {
-        !matches!(self, Self::Priest)
+        !matches!(self, UnitName::Priest)
+    }
+
+    pub fn is_melee(&self) -> bool {
+        !matches!(self, UnitName::Archer)
     }
 
     pub fn spawn_duration(&self) -> u64 {

@@ -3,17 +3,17 @@ use std::fs::File;
 use std::io;
 use std::io::{Read, Write};
 
+use crate::core::menu::systems::Host;
+use crate::core::network::ServerSendMsg;
+use crate::core::settings::Settings;
+use crate::core::states::AppState;
+use crate::TITLE;
 use bevy::prelude::*;
 use bevy_renet::renet::RenetServer;
 use bincode::config::standard;
 use bincode::serde::{decode_from_slice, encode_to_vec};
 use rfd::FileDialog;
 use serde::{Deserialize, Serialize};
-
-use crate::core::network::{Host, ServerSendMsg};
-use crate::core::settings::Settings;
-use crate::core::states::AppState;
-use crate::TITLE;
 
 #[derive(Default)]
 pub enum SaveState {
@@ -95,7 +95,7 @@ pub fn save_game(
 
             let file_path_str = file_path.to_string_lossy().to_string();
             let data = SaveAll {
-                settings: settings.clone(),
+                settings: *settings,
             };
 
             save_to_bin(&file_path_str, &data).expect("Failed to save the game.");

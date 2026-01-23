@@ -38,7 +38,7 @@ impl WorldAssets {
         asset_type: &str,
     ) -> &'a T {
         let name = name.into().clone();
-        map.get(name.as_str()).expect(&format!("No asset for {asset_type} {name}"))
+        map.get(name.as_str()).unwrap_or_else(|| panic!("No asset for {asset_type} {name}."))
     }
 
     pub fn audio(&self, name: impl Into<String>) -> Handle<AudioSource> {
@@ -122,8 +122,8 @@ impl FromWorld for WorldAssets {
                         .as_str();
 
                 images.insert(
-                    &name,
-                    assets.load(&format!(
+                    name,
+                    assets.load(format!(
                         "images/buildings/{}/{}.png",
                         color.to_name(),
                         building.to_name()
@@ -136,8 +136,8 @@ impl FromWorld for WorldAssets {
                     Box::leak(Box::new(format!("{}-{}", color.to_name(), unit.to_name()))).as_str();
 
                 images.insert(
-                    &name,
-                    assets.load(&format!(
+                    name,
+                    assets.load(format!(
                         "images/units/{}/{}.png",
                         color.to_name(),
                         unit.to_name()

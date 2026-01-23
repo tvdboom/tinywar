@@ -10,8 +10,11 @@ use bevy::window::{WindowMode, WindowResolution};
 use bevy::winit::WINIT_WINDOWS;
 use bevy_ecs_tiled::prelude::TiledPlugin;
 use bevy_kira_audio::AudioPlugin;
-use bevy_renet::netcode::{NetcodeClientPlugin, NetcodeServerPlugin};
-use bevy_renet::{RenetClientPlugin, RenetServerPlugin};
+#[cfg(not(target_arch = "wasm32"))]
+use bevy_renet::{
+    netcode::{NetcodeClientPlugin, NetcodeServerPlugin},
+    RenetClientPlugin, RenetServerPlugin,
+};
 use bevy_tweening::TweeningPlugin;
 use std::fs::{File, OpenOptions};
 use std::io::Write;
@@ -58,13 +61,21 @@ fn main() {
                 ..default()
             }),
     )
-    // Networking: systems are disabled until server/client resource is added
-    .add_plugins((RenetServerPlugin, NetcodeServerPlugin, RenetClientPlugin, NetcodeClientPlugin))
     .add_plugins((AudioPlugin, TweeningPlugin, TiledPlugin::default()))
     .add_plugins(GamePlugin);
 
     #[cfg(target_os = "windows")]
     app.add_systems(Startup, set_window_icon);
+
+    #[cfg(not(target_arch = "wasm32"))]
+    app
+        // Networking: systems are disabled until server/client resource is added
+        .add_plugins((
+            RenetServerPlugin,
+            NetcodeServerPlugin,
+            RenetClientPlugin,
+            NetcodeClientPlugin,
+        ));
 
     app.run();
 }

@@ -33,8 +33,8 @@ fn match_setting(button: &SettingsBtn, settings: &Settings) -> bool {
         SettingsBtn::Mute => settings.audio == AudioState::Mute,
         SettingsBtn::Sound => settings.audio == AudioState::Sound,
         SettingsBtn::Music => settings.audio == AudioState::Music,
-        SettingsBtn::True => settings.autosave == true,
-        SettingsBtn::False => settings.autosave == false,
+        SettingsBtn::True => settings.autosave,
+        SettingsBtn::False => !settings.autosave,
     }
 }
 
@@ -44,7 +44,7 @@ pub fn recolor_label<E: Debug + Clone + Reflect>(
     move |ev, mut bgcolor_q, settings| {
         if let Ok((mut bgcolor, button)) = bgcolor_q.get_mut(ev.entity) {
             // Don't change the color of selected buttons
-            if !match_setting(&button, &settings) {
+            if !match_setting(button, &settings) {
                 bgcolor.0 = color;
             }
         };
@@ -95,7 +95,7 @@ pub fn spawn_label(
     assets: &WorldAssets,
     window: &Window,
 ) {
-    parent.spawn(add_text(title, "bold", BUTTON_TEXT_SIZE, &assets, &window));
+    parent.spawn(add_text(title, "bold", BUTTON_TEXT_SIZE, assets, window));
 
     parent
         .spawn(Node {

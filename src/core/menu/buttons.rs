@@ -5,11 +5,14 @@ use crate::core::assets::WorldAssets;
 use crate::core::constants::*;
 use crate::core::menu::systems::StartNewGameMsg;
 use crate::core::menu::utils::{add_text, recolor};
-use crate::core::network::{new_renet_client, new_renet_server, Ip};
-use crate::core::persistence::{LoadGameMsg, SaveGameMsg};
 use crate::core::states::{AppState, GameState};
 use crate::core::utils::cursor;
 use crate::utils::NameFromEnum;
+#[cfg(not(target_arch = "wasm32"))]
+use {
+    crate::core::network::{new_renet_client, new_renet_server, Ip},
+    crate::core::persistence::{LoadGameMsg, SaveGameMsg},
+};
 
 #[derive(Component)]
 pub struct MenuCmp;
@@ -17,13 +20,18 @@ pub struct MenuCmp;
 #[derive(Component, Clone, Debug, PartialEq)]
 pub enum MenuBtn {
     Singleplayer,
+    #[cfg(not(target_arch = "wasm32"))]
     Multiplayer,
     NewGame,
+    #[cfg(not(target_arch = "wasm32"))]
     LoadGame,
+    #[cfg(not(target_arch = "wasm32"))]
     HostGame,
+    #[cfg(not(target_arch = "wasm32"))]
     FindGame,
     Back,
     Continue,
+    #[cfg(not(target_arch = "wasm32"))]
     SaveGame,
     Settings,
     Quit,
@@ -42,10 +50,10 @@ pub fn on_click_menu_button(
     event: On<Pointer<Click>>,
     mut commands: Commands,
     btn_q: Query<(Option<&DisabledButton>, &MenuBtn)>,
-    ip: Res<Ip>,
+    #[cfg(not(target_arch = "wasm32"))] ip: Res<Ip>,
     mut start_new_game_msg: MessageWriter<StartNewGameMsg>,
-    mut load_game_msg: MessageWriter<LoadGameMsg>,
-    mut save_game_msg: MessageWriter<SaveGameMsg>,
+    #[cfg(not(target_arch = "wasm32"))] mut load_game_msg: MessageWriter<LoadGameMsg>,
+    #[cfg(not(target_arch = "wasm32"))] mut save_game_msg: MessageWriter<SaveGameMsg>,
     app_state: Res<State<AppState>>,
     game_state: Res<State<GameState>>,
     mut next_app_state: ResMut<NextState<AppState>>,
@@ -61,15 +69,18 @@ pub fn on_click_menu_button(
         MenuBtn::Singleplayer => {
             next_app_state.set(AppState::SinglePlayerMenu);
         },
+        #[cfg(not(target_arch = "wasm32"))]
         MenuBtn::Multiplayer => {
             next_app_state.set(AppState::MultiPlayerMenu);
         },
         MenuBtn::NewGame => {
             start_new_game_msg.write(StartNewGameMsg);
         },
+        #[cfg(not(target_arch = "wasm32"))]
         MenuBtn::LoadGame => {
             load_game_msg.write(LoadGameMsg);
         },
+        #[cfg(not(target_arch = "wasm32"))]
         MenuBtn::HostGame => {
             let (server, transport) = new_renet_server();
             commands.insert_resource(server);
@@ -77,6 +88,7 @@ pub fn on_click_menu_button(
 
             next_app_state.set(AppState::Lobby);
         },
+        #[cfg(not(target_arch = "wasm32"))]
         MenuBtn::FindGame => {
             let (server, transport) = new_renet_client(&ip.0);
             commands.insert_resource(server);
@@ -99,6 +111,7 @@ pub fn on_click_menu_button(
         MenuBtn::Continue => {
             next_game_state.set(GameState::Playing);
         },
+        #[cfg(not(target_arch = "wasm32"))]
         MenuBtn::SaveGame => {
             save_game_msg.write(SaveGameMsg(false));
         },

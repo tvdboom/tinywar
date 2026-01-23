@@ -1,20 +1,21 @@
 use crate::core::map::map::Path;
 use crate::core::settings::PlayerColor;
 use crate::core::units::units::UnitName;
+use crate::core::utils::ClientId;
 use bevy::prelude::*;
-use bevy_renet::renet::ClientId;
-use serde::{Deserialize, Serialize};
 use std::collections::VecDeque;
 use std::time::Duration;
 use strum::IntoEnumIterator;
 
-#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug)]
+#[cfg_attr(not(target_arch = "wasm32"), derive(serde::Serialize, serde::Deserialize))]
 pub enum Side {
     Left,
     Right,
 }
 
-#[derive(Clone, Copy, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+#[cfg_attr(not(target_arch = "wasm32"), derive(serde::Serialize, serde::Deserialize))]
 pub enum PlayerDirection {
     #[default]
     Any,
@@ -36,10 +37,7 @@ impl PlayerDirection {
     }
 
     pub fn flip_y(&self) -> bool {
-        match self {
-            PlayerDirection::Bot | PlayerDirection::MidBot => true,
-            _ => false,
-        }
+        matches!(self, PlayerDirection::Bot | PlayerDirection::MidBot)
     }
 
     pub fn next(&self) -> Self {
@@ -76,7 +74,8 @@ impl PlayerDirection {
     }
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug)]
+#[cfg_attr(not(target_arch = "wasm32"), derive(serde::Serialize, serde::Deserialize))]
 pub struct QueuedUnit {
     pub unit: UnitName,
     pub timer: Timer,
@@ -91,7 +90,8 @@ impl QueuedUnit {
     }
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug)]
+#[cfg_attr(not(target_arch = "wasm32"), derive(serde::Serialize, serde::Deserialize))]
 pub struct Player {
     pub id: ClientId,
     pub color: PlayerColor,
@@ -118,7 +118,8 @@ impl Player {
     }
 }
 
-#[derive(Resource, Clone, Debug, Serialize, Deserialize)]
+#[derive(Resource, Clone, Debug)]
+#[cfg_attr(not(target_arch = "wasm32"), derive(serde::Serialize, serde::Deserialize))]
 pub struct Players {
     pub me: Player,
     pub enemy: Player,

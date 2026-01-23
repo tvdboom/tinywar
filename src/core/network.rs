@@ -1,4 +1,4 @@
-use std::net::UdpSocket;
+use std::net::{IpAddr, UdpSocket};
 use std::time::SystemTime;
 
 use bevy::prelude::*;
@@ -11,7 +11,6 @@ use serde::{Deserialize, Serialize};
 use crate::core::menu::buttons::LobbyTextCmp;
 use crate::core::settings::{PlayerColor, Settings};
 use crate::core::states::{AppState, GameState};
-use crate::utils::get_local_ip;
 
 const PROTOCOL_ID: u64 = 7;
 
@@ -20,12 +19,9 @@ pub struct Ip(pub String);
 
 impl Default for Ip {
     fn default() -> Self {
-        Self(get_local_ip().to_string())
+        Self(local_ip().to_string())
     }
 }
-
-#[derive(Resource)]
-pub struct Host;
 
 #[derive(Message)]
 pub struct ServerSendMsg {
@@ -73,6 +69,18 @@ pub enum ServerMessage {
 #[derive(Serialize, Deserialize)]
 pub enum ClientMessage {
     ShareColor(PlayerColor),
+}
+
+pub fn local_ip() -> IpAddr {
+    if cfg!(target_arch = "wasm32") {
+        let socket = UdpSocket::bind("0.0.0.0:0").expect("Socket not found.");
+
+        socket.connect("8.8.8.8:80").expect("Failed to connect to socket.");
+        socket.local_addr().ok().map(|addr| addr.ip()).unwrap()
+    } else {
+        // WebAssembly in browsers cannot access local network interfaces
+        "127.0.0.1".parse().unwrap()
+    }
 }
 
 pub fn new_renet_client(ip: &String) -> (RenetClient, NetcodeClientTransport) {
@@ -144,15 +152,15 @@ pub fn server_update(
             let n_players = server.clients_id().len() + 1;
 
             // Update the number of players in the lobby
-            let message = encode_to_vec(&ServerMessage::NPlayers(n_players), standard()).unwrap();
+            let message = encode_to_vec(ServerMessage::NPlayers(n_players), standard()).unwrap();
             server.broadcast_message(DefaultChannel::ReliableOrdered, message);
 
             if let Ok(mut text) = n_players_q.single_mut() {
                 if n_players == 1 {
-                    text.0 = format!("Waiting for other players to join {}...", get_local_ip());
+                    text.0 = format!("Waiting for other players to join {}...", local_ip());
                     next_app_state.set(AppState::Lobby);
                 } else {
-                    text.0 = format!("There are {n_players} players in the lobby.\nWaiting for other players to join {}...", get_local_ip());
+                    text.0 = format!("There are {n_players} players in the lobby.\nWaiting for other players to join {}...", local_ip());
                     next_app_state.set(AppState::ConnectedLobby);
                 }
             }
@@ -216,7 +224,6 @@ pub fn client_receive_message(
             ServerMessage::StartGame {
                 id,
             } => {
-                *settings = settings.clone();
 
                 next_app_state.set(AppState::Game);
             },

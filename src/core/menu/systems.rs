@@ -1,26 +1,28 @@
 use std::net::IpAddr;
 
 use bevy::prelude::*;
-use bevy_renet::netcode::NetcodeServerTransport;
-use bevy_renet::renet::{RenetClient, RenetServer};
+#[cfg(not(target_arch = "wasm32"))]
+use {
+    crate::core::network::local_ip,
+    crate::core::network::{Ip, ServerSendMsg},
+    bevy_renet::netcode::NetcodeServerTransport,
+    bevy_renet::renet::{RenetClient, RenetServer},
+};
 
 use crate::core::assets::WorldAssets;
-use crate::core::constants::{
-    BUTTON_TEXT_SIZE, DISABLED_BUTTON_COLOR, NORMAL_BUTTON_COLOR, TITLE_TEXT_SIZE,
-};
+use crate::core::constants::*;
 use crate::core::map::map::Map;
 use crate::core::mechanics::spawn::SpawnBuildingMsg;
-use crate::core::menu::buttons::{
-    spawn_menu_button, DisabledButton, IpTextCmp, LobbyTextCmp, MenuBtn, MenuCmp,
-};
+use crate::core::menu::buttons::*;
 use crate::core::menu::settings::{spawn_label, SettingsBtn};
 use crate::core::menu::utils::{add_root_node, add_text};
-use crate::core::network::{Host, Ip, ServerSendMsg};
 use crate::core::player::{Player, Players, Side};
 use crate::core::settings::{PlayerColor, Settings};
 use crate::core::states::{AppState, GameState};
 use crate::core::units::buildings::BuildingName;
-use crate::utils::get_local_ip;
+
+#[derive(Resource)]
+pub struct Host;
 
 #[derive(Message)]
 pub struct StartNewGameMsg;
@@ -28,9 +30,9 @@ pub struct StartNewGameMsg;
 pub fn setup_menu(
     mut commands: Commands,
     app_state: Res<State<AppState>>,
-    server: Option<Res<RenetServer>>,
+    #[cfg(not(target_arch = "wasm32"))] server: Option<Res<RenetServer>>,
     settings: Res<Settings>,
-    ip: Res<Ip>,
+    #[cfg(not(target_arch = "wasm32"))] ip: Res<Ip>,
     assets: Local<WorldAssets>,
     window: Single<&Window>,
 ) {
@@ -66,6 +68,7 @@ pub fn setup_menu(
                         spawn_menu_button(parent, MenuBtn::LoadGame, &assets, &window);
                         spawn_menu_button(parent, MenuBtn::Back, &assets, &window);
                     }
+                    #[cfg(not(target_arch = "wasm32"))]
                     AppState::MultiPlayerMenu => {
                         parent.spawn((
                             add_text(
@@ -81,6 +84,7 @@ pub fn setup_menu(
                         spawn_menu_button(parent, MenuBtn::FindGame, &assets, &window);
                         spawn_menu_button(parent, MenuBtn::Back, &assets, &window);
                     }
+                    #[cfg(not(target_arch = "wasm32"))]
                     AppState::Lobby | AppState::ConnectedLobby => {
                         if let Some(server) = server {
                             let n_players = server.clients_id().len() + 1;
@@ -88,9 +92,9 @@ pub fn setup_menu(
                             parent.spawn((
                                 add_text(
                                     if n_players == 1 {
-                                        format!("Waiting for other players to join {}...", get_local_ip())
+                                        format!("Waiting for other players to join {}...", local_ip())
                                     } else {
-                                        format!("There are {n_players} players in the lobby.\nWaiting for other players to join {}...", get_local_ip())
+                                        format!("There are {n_players} players in the lobby.\nWaiting for other players to join {}...", local_ip())
                                     },
                                     "bold",
                                     BUTTON_TEXT_SIZE,
@@ -187,6 +191,7 @@ pub fn setup_menu(
         });
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 pub fn update_ip(
     mut commands: Commands,
     mut btn_q: Query<(Entity, &mut BackgroundColor, &MenuBtn)>,
@@ -222,7 +227,7 @@ pub fn update_ip(
     for (button_e, mut bgcolor, btn) in &mut btn_q {
         match btn {
             MenuBtn::HostGame => {
-                if ip.0 == get_local_ip().to_string() {
+                if ip.0 == local_ip().to_string() {
                     // Only enable once when the ip becomes the local one
                     if *not_local_ip {
                         bgcolor.0 = NORMAL_BUTTON_COLOR;
@@ -323,6 +328,7 @@ pub fn setup_game_settings(
     });
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 pub fn exit_multiplayer_lobby(
     mut commands: Commands,
     server: Option<ResMut<RenetServer>>,
@@ -341,8 +347,10 @@ pub fn exit_multiplayer_lobby(
 pub fn start_new_game_message(
     mut commands: Commands,
     mut start_new_game_msg: MessageReader<StartNewGameMsg>,
+    #[cfg(not(target_arch = "wasm32"))]
     server: Option<ResMut<RenetServer>>,
     mut settings: ResMut<Settings>,
+    #[cfg(not(target_arch = "wasm32"))]
     mut server_send_msg: MessageWriter<ServerSendMsg>,
     mut spawn_building_msg: MessageWriter<SpawnBuildingMsg>,
     app_state: Res<State<AppState>>,
@@ -350,16 +358,17 @@ pub fn start_new_game_message(
     mut next_game_state: ResMut<NextState<GameState>>,
 ) {
     if !start_new_game_msg.is_empty() {
-        let enemy_id = if *app_state.get() == AppState::SinglePlayerMenu {
+        let mut enemy_id = 1;
+        if *app_state.get() == AppState::SinglePlayerMenu {
             settings.enemy_color = match settings.color {
                 PlayerColor::Red => PlayerColor::Blue,
                 _ => PlayerColor::Red,
             };
-
-            1
         } else {
-            let server = server.unwrap();
-            *server.clients_id().first().unwrap()
+            #[cfg(not(target_arch = "wasm32"))]
+            {
+                enemy_id = *server.unwrap().clients_id().first().unwrap()
+            }
         };
 
         // Spawn starting buildings

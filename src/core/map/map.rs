@@ -92,7 +92,7 @@ impl Map {
     ];
 
     pub fn starting_positions() -> Vec<Vec2> {
-        Self::STARTING_POSITIONS.iter().map(|p| Self::tile_to_world(p)).collect()
+        Self::STARTING_POSITIONS.iter().map(Self::tile_to_world).collect()
     }
 
     pub fn get_neighbors(pos: &TilePos) -> Vec<TilePos> {
@@ -141,7 +141,7 @@ impl Map {
             |pos| pos == end,
         )
         .map(|(path, _)| path)
-        .expect(&format!("Unable to find a path from {start:?} to {end:?}."))
+        .unwrap_or_else(|| panic!("Unable to find a path from {start:?} to {end:?}."))
     }
 
     pub fn path(&self, path: &Path) -> Vec<TilePos> {
