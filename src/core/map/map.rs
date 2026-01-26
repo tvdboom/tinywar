@@ -70,7 +70,8 @@ impl Map {
             Self::MAP_SIZE.y as f32 * Self::TILE_SIZE as f32 * 0.5,
         ),
     };
-    pub const STARTING_POSITIONS: [TilePos; 2] = [TilePos::new(3, 0), TilePos::new(26, 0)];
+
+    pub const STARTING_POSITIONS: [TilePos; 2] = [TilePos::new(3, 0), TilePos::new(27, 0)];
 
     const WALKABLE_BITS: [u32; 16] = [
         0b001110000000000000000000011100,

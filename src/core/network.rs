@@ -9,6 +9,8 @@ use bincode::serde::{decode_from_slice, encode_to_vec};
 use serde::{Deserialize, Serialize};
 
 use crate::core::menu::buttons::LobbyTextCmp;
+use crate::core::multiplayer::{Population, UpdatePopulationMsg};
+use crate::core::player::{Player, Players, Side};
 use crate::core::settings::{PlayerColor, Settings};
 use crate::core::states::{AppState, GameState};
 
@@ -60,15 +62,38 @@ pub enum ServerMessage {
     NPlayers(usize),
     StartGame {
         id: ClientId,
+        color: PlayerColor,
+        enemy_id: ClientId,
+        enemy_color: PlayerColor,
     },
-    StartTurn {
-        turn: usize,
+    State(GameState),
+    Status {
+        speed: f32,
+        population: Population,
     },
+}
+
+impl ServerMessage {
+    pub fn channel(&self) -> DefaultChannel {
+        match self {
+            ServerMessage::Status {
+                ..
+            } => DefaultChannel::Unreliable,
+            _ => DefaultChannel::ReliableOrdered,
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize)]
 pub enum ClientMessage {
     ShareColor(PlayerColor),
+    State(GameState),
+}
+
+impl ClientMessage {
+    pub fn channel(&self) -> DefaultChannel {
+        DefaultChannel::ReliableOrdered
+    }
 }
 
 pub fn local_ip() -> IpAddr {
@@ -175,19 +200,34 @@ pub fn server_send_message(
     for msg in server_send_msg.read() {
         let message = encode_to_vec(&msg.message, standard()).unwrap();
         if let Some(client_id) = msg.client {
-            server.send_message(client_id, DefaultChannel::ReliableOrdered, message);
+            server.send_message(client_id, msg.message.channel(), message);
         } else {
-            server.broadcast_message(DefaultChannel::ReliableOrdered, message);
+            server.broadcast_message(msg.message.channel(), message);
         }
     }
 }
 
-pub fn server_receive_message(mut server: ResMut<RenetServer>, mut settings: ResMut<Settings>) {
+pub fn server_receive_message(
+    mut server: ResMut<RenetServer>,
+    mut settings: ResMut<Settings>,
+    game_state: Res<State<GameState>>,
+    mut next_game_state: ResMut<NextState<GameState>>,
+) {
     for id in server.clients_id() {
         while let Some(message) = server.receive_message(id, DefaultChannel::ReliableOrdered) {
             let (d, _) = decode_from_slice(&message, standard()).unwrap();
             match d {
                 ClientMessage::ShareColor(enemy_color) => settings.enemy_color = enemy_color,
+                ClientMessage::State(state) => match state {
+                    GameState::GameMenu | GameState::Paused
+                        if *game_state.get() == GameState::Playing =>
+                    {
+                        next_game_state.set(GameState::Paused);
+                    },
+                    GameState::Playing => next_game_state.set(GameState::Playing),
+                    GameState::EndGame => next_game_state.set(GameState::EndGame),
+                    _ => (),
+                },
             }
         }
     }
@@ -199,16 +239,20 @@ pub fn client_send_message(
 ) {
     for msg in client_send_msg.read() {
         let message = encode_to_vec(&msg.message, standard()).unwrap();
-        client.send_message(DefaultChannel::ReliableOrdered, message);
+        client.send_message(msg.message.channel(), message);
     }
 }
 
 pub fn client_receive_message(
+    mut commands: Commands,
     mut n_players_q: Query<&mut Text, With<LobbyTextCmp>>,
     mut client: ResMut<RenetClient>,
     mut settings: ResMut<Settings>,
     mut next_app_state: ResMut<NextState<AppState>>,
     mut client_send_msg: MessageWriter<ClientSendMsg>,
+    mut update_population_msg: MessageWriter<UpdatePopulationMsg>,
+    game_state: Res<State<GameState>>,
+    mut next_game_state: ResMut<NextState<GameState>>,
 ) {
     while let Some(message) = client.receive_message(DefaultChannel::ReliableOrdered) {
         let (d, _) = decode_from_slice(&message, standard()).unwrap();
@@ -223,7 +267,18 @@ pub fn client_receive_message(
             },
             ServerMessage::StartGame {
                 id,
+                color,
+                enemy_id,
+                enemy_color,
             } => {
+                settings.color = color;
+                settings.enemy_color = enemy_color;
+
+                commands.insert_resource(Players {
+                    me: Player::new(id, color, Side::Right),
+                    enemy: Player::new(enemy_id, enemy_color, Side::Left),
+                });
+                next_game_state.set(GameState::default());
                 next_app_state.set(AppState::Game);
             },
             ServerMessage::LoadGame {
@@ -232,9 +287,33 @@ pub fn client_receive_message(
             } => {
                 next_app_state.set(AppState::Game);
             },
-            ServerMessage::StartTurn {
-                turn,
-            } => {},
+            ServerMessage::State(state) => match state {
+                GameState::GameMenu | GameState::Paused
+                    if *game_state.get() == GameState::Playing =>
+                {
+                    next_game_state.set(GameState::Paused)
+                },
+                s @ GameState::Playing => next_game_state.set(s),
+                _ => (),
+            },
+            _ => unreachable!(),
+        }
+    }
+
+    while let Some(message) = client.receive_message(DefaultChannel::Unreliable) {
+        let (d, _) = decode_from_slice(&message, standard()).unwrap();
+        match d {
+            ServerMessage::Status {
+                speed,
+                population,
+            } => {
+                settings.speed = speed;
+                update_population_msg.write(UpdatePopulationMsg {
+                    id: 0,
+                    population,
+                });
+            },
+            _ => unreachable!(),
         }
     }
 }

@@ -1,6 +1,3 @@
-use bevy::prelude::*;
-use bevy::window::SystemCursorIcon;
-
 use crate::core::assets::WorldAssets;
 use crate::core::constants::*;
 use crate::core::menu::systems::StartNewGameMsg;
@@ -8,6 +5,8 @@ use crate::core::menu::utils::{add_text, recolor};
 use crate::core::states::{AppState, GameState};
 use crate::core::utils::cursor;
 use crate::utils::NameFromEnum;
+use bevy::prelude::*;
+use bevy::window::SystemCursorIcon;
 #[cfg(not(target_arch = "wasm32"))]
 use {
     crate::core::network::{new_renet_client, new_renet_server, Ip},
@@ -158,6 +157,7 @@ pub fn spawn_menu_button(
         .observe(recolor::<Release>(HOVERED_BUTTON_COLOR))
         .observe(cursor::<Over>(SystemCursorIcon::Pointer))
         .observe(cursor::<Out>(SystemCursorIcon::Default))
+        .observe(cursor::<Release>(SystemCursorIcon::Default))
         .observe(on_click_menu_button)
         .with_children(|parent| {
             parent.spawn(add_text(btn.to_title(), "bold", BUTTON_TEXT_SIZE, assets, window));

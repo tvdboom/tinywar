@@ -72,9 +72,9 @@ pub fn update_units(
             },
             Action::Heal(e) => units
                 .get(&e)
-                .filter(|(pos, unit)| {
+                .filter(|(pos, target)| {
                     unit_t.translation.distance(*pos) <= unit.range() * RADIUS
-                        && unit.health < unit.name.health()
+                        && target.health < target.name.health()
                 })
                 .map(|(pos, _)| {
                     unit_s.flip_x = pos.x < unit_t.translation.x;

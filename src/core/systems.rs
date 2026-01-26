@@ -2,7 +2,7 @@ use crate::core::audio::PlayAudioMsg;
 use crate::core::constants::{MAX_GAME_SPEED, MIN_GAME_SPEED};
 use crate::core::map::ui::systems::UiCmp;
 use crate::core::mechanics::queue::QueueUnitMsg;
-use crate::core::menu::systems::StartNewGameMsg;
+use crate::core::menu::systems::{Host, StartNewGameMsg};
 use crate::core::menu::utils::TextSize;
 use crate::core::player::{PlayerDirection, Players};
 use crate::core::settings::Settings;
@@ -75,6 +75,7 @@ pub fn check_keys_menu(
 
 pub fn check_keys_game(
     keyboard: Res<ButtonInput<KeyCode>>,
+    host: Option<Res<Host>>,
     mut settings: ResMut<Settings>,
     game_state: Res<State<GameState>>,
     mut next_game_state: ResMut<NextState<GameState>>,
@@ -86,7 +87,9 @@ pub fn check_keys_game(
                 GameState::Paused => next_game_state.set(GameState::Playing),
                 _ => unreachable!(),
             }
-        } else if keyboard.any_pressed([KeyCode::ControlLeft, KeyCode::ControlRight]) {
+        } else if host.is_some()
+            && keyboard.any_pressed([KeyCode::ControlLeft, KeyCode::ControlRight])
+        {
             if keyboard.just_released(KeyCode::ArrowRight) {
                 settings.speed = (settings.speed * 2.).min(MAX_GAME_SPEED);
             } else if keyboard.just_released(KeyCode::ArrowLeft) {

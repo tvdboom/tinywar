@@ -6,6 +6,8 @@ pub mod map;
 mod mechanics;
 mod menu;
 #[cfg(not(target_arch = "wasm32"))]
+mod multiplayer;
+#[cfg(not(target_arch = "wasm32"))]
 mod network;
 #[cfg(not(target_arch = "wasm32"))]
 mod persistence;
@@ -18,7 +20,7 @@ mod utils;
 
 use crate::core::audio::*;
 use crate::core::camera::*;
-use crate::core::constants::WATER_COLOR;
+use crate::core::constants::{UPDATE_TIMER, WATER_COLOR};
 use crate::core::map::map::Map;
 use crate::core::map::systems::{draw_map, setup_end_game, MapCmp};
 use crate::core::map::ui::systems::{draw_ui, update_ui, UiCmp};
@@ -34,9 +36,12 @@ use crate::core::systems::*;
 use crate::core::units::systems::{update_buildings, update_units};
 use crate::core::utils::despawn;
 use bevy::prelude::*;
+use bevy::time::common_conditions::on_timer;
+use std::time::Duration;
 use strum::IntoEnumIterator;
 #[cfg(not(target_arch = "wasm32"))]
 use {
+    crate::core::multiplayer::*,
     crate::core::network::*,
     crate::core::persistence::{load_game, save_game, LoadGameMsg, SaveGameMsg},
     bevy_renet::renet::{RenetClient, RenetServer},
@@ -174,10 +179,11 @@ impl Plugin for GamePlugin {
 
         #[cfg(not(target_arch = "wasm32"))]
         app
-            //Networking
+            // Networking && multiplayer
             .add_message::<ServerSendMsg>()
             .add_message::<ClientSendMsg>()
             .init_resource::<Ip>()
+            .init_resource::<EntityMap>()
             .add_systems(
                 First,
                 (
@@ -185,13 +191,21 @@ impl Plugin for GamePlugin {
                     client_receive_message.run_if(resource_exists::<RenetClient>),
                 ),
             )
+            .add_systems(PreUpdate, update_population_message.in_set(InGameSet))
+            .add_systems(Update, update_game_state.run_if(state_changed::<GameState>))
             .add_systems(Update, server_update.run_if(resource_exists::<RenetServer>))
             .add_systems(Update, update_ip.run_if(in_state(AppState::MultiPlayerMenu)))
             .add_systems(
                 Last,
                 (
-                    server_send_message.run_if(resource_exists::<RenetServer>),
-                    client_send_message.run_if(resource_exists::<RenetClient>),
+                    (
+                        server_send_message,
+                        server_send_status
+                            .run_if(on_timer(Duration::from_millis(UPDATE_TIMER)))
+                            .in_set(InPlayingSet),
+                    )
+                        .run_if(resource_exists::<RenetServer>),
+                    (client_send_message,).run_if(resource_exists::<RenetClient>),
                 ),
             )
             .add_systems(OnExit(AppState::Game), exit_multiplayer_lobby)

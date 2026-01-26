@@ -4,7 +4,7 @@ use bevy::prelude::*;
 #[cfg(not(target_arch = "wasm32"))]
 use {
     crate::core::network::local_ip,
-    crate::core::network::{Ip, ServerSendMsg},
+    crate::core::network::{ServerMessage, ServerSendMsg, Ip},
     bevy_renet::netcode::NetcodeServerTransport,
     bevy_renet::renet::{RenetClient, RenetServer},
 };
@@ -356,18 +356,35 @@ pub fn start_new_game_message(
     mut next_game_state: ResMut<NextState<GameState>>,
 ) {
     if !start_new_game_msg.is_empty() {
-        let mut enemy_id = 1;
-        if *app_state.get() == AppState::SinglePlayerMenu {
-            settings.enemy_color = match settings.color {
+        let (enemy_id, enemy_color) = if *app_state.get() == AppState::SinglePlayerMenu {
+            let enemy_color = match settings.color {
                 PlayerColor::Red => PlayerColor::Blue,
                 _ => PlayerColor::Red,
             };
+
+            (1, enemy_color)
         } else {
             #[cfg(not(target_arch = "wasm32"))]
             {
-                enemy_id = *server.unwrap().clients_id().first().unwrap()
+                let enemy_id = *server.unwrap().clients_id().first().unwrap();
+                server_send_msg.write(ServerSendMsg::new(
+                    ServerMessage::StartGame {
+                        id: enemy_id,
+                        color: settings.enemy_color,
+                        enemy_id: 0,
+                        enemy_color: settings.color,
+                    },
+                    Some(enemy_id),
+                ));
+
+                (enemy_id, settings.enemy_color)
             }
+
+            #[cfg(target_arch = "wasm32")]
+            unreachable!()
         };
+
+        settings.enemy_color = enemy_color;
 
         // Spawn starting buildings
         for (id, position) in [0, enemy_id].into_iter().zip(Map::starting_positions()) {
@@ -383,7 +400,7 @@ pub fn start_new_game_message(
         commands.insert_resource(Host);
         commands.insert_resource(Players {
             me: Player::new(0, settings.color, Side::Left),
-            enemy: Player::new(enemy_id, settings.enemy_color, Side::Right),
+            enemy: Player::new(enemy_id, enemy_color, Side::Right),
         });
         next_game_state.set(GameState::default());
         next_app_state.set(AppState::Game);

@@ -100,7 +100,6 @@ pub fn draw_ui(
                             index,
                         },
                     ),
-                    ZIndex(1),
                 ));
 
                 if let Some(me) = component {
@@ -114,7 +113,7 @@ pub fn draw_ui(
                             },
                             add_text("0%", "bold", 20., &assets, &window),
                             TextAdvanceBannerCmp,
-                            ZIndex(2),
+                            GlobalZIndex(2), // On top of other color banner
                         )],
                     ));
                 }

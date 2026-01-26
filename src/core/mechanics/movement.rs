@@ -57,7 +57,7 @@ fn move_unit(
 
     let target_tile = get_target_tile(&tile, &path);
     let target_pos = Map::tile_to_world(&target_tile).extend(unit_t.translation.z);
-    let target_delta = target_pos - unit_t.translation;
+    let target_delta = (target_pos - unit_t.translation).normalize();
 
     let mut separation = Vec3::ZERO;
 
@@ -66,6 +66,7 @@ fn move_unit(
         if let Some(units) = unit_pos.get(&tile) {
             for (other_e, other_pos, other) in units {
                 let delta = unit_t.translation - other_pos;
+                let delta_norm = delta.normalize();
                 let dist = delta.length();
 
                 // Skip if self or too far to interact
@@ -75,7 +76,8 @@ fn move_unit(
 
                 // Possible interactions are:
                 // - Priest with unhealthy ally -> heal
-                // - Non-priest with enemy -> attack
+                // - Combat unit with enemy -> attack
+                // - Else: resolve separation force
                 unit.action = match (unit.name, unit.color == other.color) {
                     (UnitName::Priest, true) if other.health < other.name.health() => {
                         Action::Heal(*other_e)
@@ -85,30 +87,50 @@ fn move_unit(
                         Action::Attack(*other_e)
                     },
                     _ => {
-                        if dist <= SEPARATION_RADIUS {
-                            let separation_strength =
-                                (SEPARATION_RADIUS - dist) / (SEPARATION_RADIUS);
+                        if dist <= SEPARATION_RADIUS && other.on_building.is_none() {
+                            let strength = (SEPARATION_RADIUS - dist).powi(3) / (SEPARATION_RADIUS);
 
-                            // Determine separation direction based on target position
-                            // If moving upward (target higher), prefer going up
-                            // If moving downward, prefer going down
-                            let vertical_dir = if target_delta.y.abs() > RADIUS {
-                                // Moving significantly up or down - separate in that direction
-                                if target_delta.y > 0. {
-                                    1.
-                                } else {
-                                    -1.
-                                }
+                            // Calculate a "sideways" vector (perpendicular to movement)
+                            let perpendicular = Vec3::new(-target_delta.y, target_delta.x, 0.);
+
+                            // Determine which side of the path the other unit is on
+                            let natural_sign = if delta_norm.dot(perpendicular) >= 0. {
+                                1.
                             } else {
-                                // Moving mostly horizontal - separate based on current position
-                                if delta.y > 0. {
-                                    1.
-                                } else {
-                                    -1.
-                                }
+                                -1.
                             };
 
-                            separation.y += vertical_dir * separation_strength;
+                            // Check if the natural direction is blocked by checking for units on that side
+                            let check_pos = unit_t.translation
+                                + perpendicular * natural_sign * SEPARATION_RADIUS * 0.5;
+                            let check_tile = Map::world_to_tile(&check_pos);
+
+                            let mut blocked = false;
+                            'block: for check_t in get_tiles_at_distance(&check_tile, 1) {
+                                if let Some(units) = unit_pos.get(&check_t) {
+                                    for (check_e, check_pos, check_unit) in units {
+                                        if *check_e != unit_e
+                                            && *check_e != *other_e
+                                            && check_unit.on_building.is_none()
+                                            && unit_t.translation.distance(*check_pos)
+                                                < SEPARATION_RADIUS
+                                        {
+                                            blocked = true;
+                                            break 'block;
+                                        }
+                                    }
+                                }
+                            }
+
+                            // If blocked, flip to the other side
+                            let sign = if blocked {
+                                -natural_sign
+                            } else {
+                                natural_sign
+                            };
+
+                            // Apply force: mostly perpendicular to bypass, slightly away to avoid collision
+                            separation += perpendicular * sign + delta_norm * strength;
                         }
 
                         continue;
@@ -125,7 +147,7 @@ fn move_unit(
 
                 if unit.name.can_attack()
                     && building.color != unit.color
-                    && dist <= (unit.range() * RADIUS).max(SEPARATION_RADIUS)
+                    && dist <= (unit.range() * RADIUS).max(2. * RADIUS)
                 {
                     unit.action = Action::Attack(*building_e);
                     return;
@@ -140,10 +162,17 @@ fn move_unit(
     }
 
     let desired = (target_pos - unit_t.translation).normalize();
-    let separation = separation.normalize_or_zero();
+
+    // Prevent backwards walking to avoid flickering of blocked units
+    let dot_prod = separation.dot(desired);
+    if dot_prod < 0. {
+        separation -= desired * dot_prod;
+    }
+
+    let movement = desired + 7. * separation.normalize_or_zero();
 
     let mut next_pos = unit_t.translation
-        + (desired + separation).normalize()
+        + movement.normalize()
             * unit.name.speed()
             * settings.speed
             * time.delta_secs().min(CAPPED_DELTA_SECS_SPEED);
@@ -159,19 +188,16 @@ fn move_unit(
             }
         }
 
-        // Change the direction the unit is facing when considerable change
-        let next_delta = (next_pos - unit_t.translation).normalize();
-        if next_delta.x.abs() > 0.2 {
-            unit_s.flip_x = next_pos.x < unit_t.translation.x;
-        }
+        // Change the direction the unit is facing
+        unit_s.flip_x = if next_tile.x != tile.x {
+            next_tile.x < tile.x
+        } else {
+            players.me.color != unit.color
+        };
 
         unit_t.translation = next_pos;
         unit.action = Action::Run;
     } else {
-        println!(
-            "{:?} - now: {:?} - next: {:?} - target: {:?}",
-            unit.name, tile, next_tile, target_tile
-        );
         unit.action = Action::Idle;
     }
 }

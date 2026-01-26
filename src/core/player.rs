@@ -3,19 +3,18 @@ use crate::core::settings::PlayerColor;
 use crate::core::units::units::UnitName;
 use crate::core::utils::ClientId;
 use bevy::prelude::*;
+use serde::{Deserialize, Serialize};
 use std::collections::VecDeque;
 use std::time::Duration;
 use strum::IntoEnumIterator;
 
-#[derive(Clone, Copy, Debug)]
-#[cfg_attr(not(target_arch = "wasm32"), derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
 pub enum Side {
     Left,
     Right,
 }
 
-#[derive(Clone, Copy, Debug, Default, PartialEq)]
-#[cfg_attr(not(target_arch = "wasm32"), derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Serialize, Deserialize)]
 pub enum PlayerDirection {
     #[default]
     Any,
@@ -74,8 +73,7 @@ impl PlayerDirection {
     }
 }
 
-#[derive(Clone, Debug)]
-#[cfg_attr(not(target_arch = "wasm32"), derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct QueuedUnit {
     pub unit: UnitName,
     pub timer: Timer,
@@ -90,8 +88,7 @@ impl QueuedUnit {
     }
 }
 
-#[derive(Clone, Debug)]
-#[cfg_attr(not(target_arch = "wasm32"), derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Player {
     pub id: ClientId,
     pub color: PlayerColor,
@@ -118,8 +115,7 @@ impl Player {
     }
 }
 
-#[derive(Resource, Clone, Debug)]
-#[cfg_attr(not(target_arch = "wasm32"), derive(serde::Serialize, serde::Deserialize))]
+#[derive(Resource, Clone, Debug, Serialize, Deserialize)]
 pub struct Players {
     pub me: Player,
     pub enemy: Player,

@@ -123,7 +123,7 @@ impl UnitName {
             UnitName::Warrior => 20.,
             UnitName::Lancer => 25.,
             UnitName::Archer => 15.,
-            UnitName::Priest => 10.,
+            UnitName::Priest => 15.,
         }
     }
 
