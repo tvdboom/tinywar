@@ -34,7 +34,6 @@ pub const CAPPED_DELTA_SECS_SPEED: f32 = 0.05;
 /// Units
 pub const UNIT_DEFAULT_SIZE: f32 = 192.;
 pub const RADIUS: f32 = UNIT_DEFAULT_SIZE * UNIT_SCALE * 0.5;
-pub const SEPARATION_STRENGTH: f32 = 4.;
 pub const SEPARATION_RADIUS: f32 = 2. * RADIUS;
 pub const UNIT_SCALE: f32 = 0.5;
 pub const BUILDING_SCALE: f32 = 0.7;

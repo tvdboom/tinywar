@@ -1,4 +1,4 @@
-use crate::core::constants::{BUILDINGS_Z, CAPPED_DELTA_SECS_SPEED, RADIUS};
+use crate::core::constants::{BUILDINGS_Z, CAPPED_DELTA_SECS_SPEED, RADIUS, SEPARATION_RADIUS};
 use crate::core::map::map::Map;
 use crate::core::mechanics::combat::{ApplyDamageMsg, Arrow};
 use crate::core::mechanics::spawn::DespawnMsg;
@@ -18,18 +18,16 @@ fn get_tiles_at_distance(pos: &TilePos, d: u32) -> HashSet<TilePos> {
         .collect()
 }
 
-/// Return the next tile to walk to, which is the one following the closest tile
-fn next_tile_on_path<'a>(pos: &Vec3, path: &'a [TilePos]) -> &'a TilePos {
-    path.iter()
+/// Return the next tile to walk to, which is the one after the closest path tile
+fn get_target_tile(tile: &TilePos, path: &[TilePos]) -> TilePos {
+    let closest = path
+        .iter()
         .enumerate()
-        .min_by_key(|(_, tile)| {
-            let tile_pos = Map::tile_to_world(tile);
-            let dx = pos.x - tile_pos.x;
-            let dy = pos.y - tile_pos.y;
-            (dx * dx + dy * dy) as i32
-        })
-        .map(|(idx, _)| path.get(idx + 1).unwrap_or(path.last().unwrap()))
-        .unwrap()
+        .min_by_key(|(_, t)| tile.x.abs_diff(t.x) + tile.y.abs_diff(t.y))
+        .map(|(i, _)| path.get(i + 1).unwrap_or_else(|| return path.last().unwrap()))
+        .unwrap();
+
+    Map::find_path(tile, closest)[1]
 }
 
 fn move_unit(
@@ -57,8 +55,11 @@ fn move_unit(
         return;
     }
 
-    let target_tile = next_tile_on_path(&unit_t.translation, &path);
-    let target_pos = Map::tile_to_world(target_tile).extend(unit_t.translation.z);
+    let target_tile = get_target_tile(&tile, &path);
+    let target_pos = Map::tile_to_world(&target_tile).extend(unit_t.translation.z);
+    let target_delta = target_pos - unit_t.translation;
+
+    let mut separation = Vec3::ZERO;
 
     // Only check units in the surrounding
     for tile in get_tiles_at_distance(&tile, 4) {
@@ -80,8 +81,38 @@ fn move_unit(
                         Action::Heal(*other_e)
                     },
                     (u, false) if !u.is_melee() => Action::Attack(*other_e),
-                    (u, false) if u.can_attack() && dist <= 2. * RADIUS => Action::Attack(*other_e),
-                    _ => continue,
+                    (u, false) if u.can_attack() && dist <= SEPARATION_RADIUS => {
+                        Action::Attack(*other_e)
+                    },
+                    _ => {
+                        if dist <= SEPARATION_RADIUS {
+                            let separation_strength =
+                                (SEPARATION_RADIUS - dist) / (SEPARATION_RADIUS);
+
+                            // Determine separation direction based on target position
+                            // If moving upward (target higher), prefer going up
+                            // If moving downward, prefer going down
+                            let vertical_dir = if target_delta.y.abs() > RADIUS {
+                                // Moving significantly up or down - separate in that direction
+                                if target_delta.y > 0. {
+                                    1.
+                                } else {
+                                    -1.
+                                }
+                            } else {
+                                // Moving mostly horizontal - separate based on current position
+                                if delta.y > 0. {
+                                    1.
+                                } else {
+                                    -1.
+                                }
+                            };
+
+                            separation.y += vertical_dir * separation_strength;
+                        }
+
+                        continue;
+                    },
                 };
 
                 return;
@@ -94,7 +125,7 @@ fn move_unit(
 
                 if unit.name.can_attack()
                     && building.color != unit.color
-                    && dist <= (unit.range() * RADIUS).max(2. * RADIUS)
+                    && dist <= (unit.range() * RADIUS).max(SEPARATION_RADIUS)
                 {
                     unit.action = Action::Attack(*building_e);
                     return;
@@ -108,8 +139,11 @@ fn move_unit(
         return;
     }
 
+    let desired = (target_pos - unit_t.translation).normalize();
+    let separation = separation.normalize_or_zero();
+
     let mut next_pos = unit_t.translation
-        + (target_pos - unit_t.translation).normalize()
+        + (desired + separation).normalize()
             * unit.name.speed()
             * settings.speed
             * time.delta_secs().min(CAPPED_DELTA_SECS_SPEED);
@@ -125,12 +159,19 @@ fn move_unit(
             }
         }
 
-        // Change the direction the unit is facing
-        unit_s.flip_x = next_pos.x < unit_t.translation.x;
+        // Change the direction the unit is facing when considerable change
+        let next_delta = (next_pos - unit_t.translation).normalize();
+        if next_delta.x.abs() > 0.2 {
+            unit_s.flip_x = next_pos.x < unit_t.translation.x;
+        }
 
         unit_t.translation = next_pos;
         unit.action = Action::Run;
     } else {
+        println!(
+            "{:?} - now: {:?} - next: {:?} - target: {:?}",
+            unit.name, tile, next_tile, target_tile
+        );
         unit.action = Action::Idle;
     }
 }

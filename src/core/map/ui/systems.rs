@@ -276,6 +276,7 @@ pub fn draw_ui(
                                     ..default()
                                 },
                                 ImageNode::new(assets.image("banner")),
+                                Pickable::IGNORE,
                                 GlobalZIndex(2), // On top of queue
                                 Visibility::Hidden,
                                 HoverBoxCmp,

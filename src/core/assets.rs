@@ -137,11 +137,7 @@ impl FromWorld for WorldAssets {
 
                 images.insert(
                     name,
-                    assets.load(format!(
-                        "images/units/{}/{}.png",
-                        color.to_name(),
-                        unit.to_name()
-                    )),
+                    assets.load(format!("images/units/{}/{}.png", color.to_name(), unit.to_name())),
                 );
 
                 for action in ActionKind::iter() {

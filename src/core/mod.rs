@@ -79,7 +79,7 @@ impl Plugin for GamePlugin {
             .add_message::<MuteAudioMsg>()
             .add_message::<ChangeAudioMsg>()
             .add_message::<StartNewGameMsg>()
-   .add_message::<QueueUnitMsg>()
+            .add_message::<QueueUnitMsg>()
             .add_message::<SpawnBuildingMsg>()
             .add_message::<SpawnUnitMsg>()
             .add_message::<DespawnMsg>()

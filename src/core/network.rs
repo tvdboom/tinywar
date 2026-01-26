@@ -224,7 +224,6 @@ pub fn client_receive_message(
             ServerMessage::StartGame {
                 id,
             } => {
-
                 next_app_state.set(AppState::Game);
             },
             ServerMessage::LoadGame {

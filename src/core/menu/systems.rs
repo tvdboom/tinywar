@@ -347,11 +347,9 @@ pub fn exit_multiplayer_lobby(
 pub fn start_new_game_message(
     mut commands: Commands,
     mut start_new_game_msg: MessageReader<StartNewGameMsg>,
-    #[cfg(not(target_arch = "wasm32"))]
-    server: Option<ResMut<RenetServer>>,
+    #[cfg(not(target_arch = "wasm32"))] server: Option<ResMut<RenetServer>>,
     mut settings: ResMut<Settings>,
-    #[cfg(not(target_arch = "wasm32"))]
-    mut server_send_msg: MessageWriter<ServerSendMsg>,
+    #[cfg(not(target_arch = "wasm32"))] mut server_send_msg: MessageWriter<ServerSendMsg>,
     mut spawn_building_msg: MessageWriter<SpawnBuildingMsg>,
     app_state: Res<State<AppState>>,
     mut next_app_state: ResMut<NextState<AppState>>,

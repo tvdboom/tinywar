@@ -133,7 +133,7 @@ impl Map {
         Self::WALKABLE_BITS[pos.y as usize] & (1 << (Self::MAP_SIZE.x - 1 - pos.x)) != 0
     }
 
-    fn find_path(start: &TilePos, end: &TilePos) -> Vec<TilePos> {
+    pub fn find_path(start: &TilePos, end: &TilePos) -> Vec<TilePos> {
         astar(
             start,
             |pos| Self::get_neighbors(pos).into_iter().map(|pos| (pos, 1)).collect::<Vec<_>>(),
