@@ -1,19 +1,18 @@
 use crate::core::assets::WorldAssets;
 use crate::core::audio::PlayAudioMsg;
-use crate::core::constants::{EXPLOSION_Z, FRAME_RATE, RADIUS, UNITS_Z};
-use crate::core::map::systems::MapCmp;
+use crate::core::constants::{EXPLOSION_Z, FRAME_RATE, RADIUS};
 use crate::core::map::utils::SpriteFrameLens;
-use crate::core::mechanics::spawn::DespawnMsg;
+use crate::core::mechanics::spawn::{DespawnMsg, SpawnArrowMsg};
 use crate::core::settings::PlayerColor;
 use crate::core::units::buildings::Building;
 use crate::core::units::units::{Action, Unit, UnitName};
 use bevy::prelude::*;
 use bevy_tweening::{CycleCompletedEvent, Delay, Tween, TweenAnim};
 use rand::{rng, Rng};
-use std::f32::consts::FRAC_PI_4;
+use serde::{Deserialize, Serialize};
 use std::time::Duration;
 
-#[derive(Component)]
+#[derive(Component, Deref, DerefMut)]
 pub struct BuildingDestroyCmp(pub Timer);
 
 impl Default for BuildingDestroyCmp {
@@ -22,12 +21,12 @@ impl Default for BuildingDestroyCmp {
     }
 }
 
-#[derive(Component)]
+#[derive(Component, Clone, Serialize, Deserialize)]
 pub struct Arrow {
     pub color: PlayerColor,
     pub damage: f32,
-    pub start: Vec3,
-    pub destination: Vec3,
+    pub start: Vec2,
+    pub destination: Vec2,
     pub total_distance: f32,
     pub traveled: f32,
     pub despawn_timer: Timer,
@@ -37,7 +36,7 @@ impl Arrow {
     pub const SPEED: f32 = 160.;
     pub const ON_GROUND_SECS: u64 = 2;
 
-    pub fn new(color: PlayerColor, damage: f32, start: Vec3, destination: Vec3) -> Self {
+    pub fn new(color: PlayerColor, damage: f32, start: Vec2, destination: Vec2) -> Self {
         Arrow {
             color,
             damage,
@@ -66,12 +65,11 @@ impl ApplyDamageMsg {
 }
 
 pub fn resolve_attack(
-    mut commands: Commands,
     entity_q: Query<(Entity, &Transform)>,
     unit_q: Query<(&Transform, &Unit)>,
     mut cycle_completed_msg: MessageReader<CycleCompletedEvent>,
+    mut spawn_arrow_msg: MessageWriter<SpawnArrowMsg>,
     mut apply_damage_msg: MessageWriter<ApplyDamageMsg>,
-    assets: Local<WorldAssets>,
 ) {
     // Apply damage after the attacking animation finished
     for msg in cycle_completed_msg.read() {
@@ -81,37 +79,23 @@ pub fn resolve_attack(
                     if let Ok((target_e, target_t)) = entity_q.get(e) {
                         if unit.name == UnitName::Archer {
                             // Archers don't apply damage but spawn arrows at the end of the animation
-                            let start_pos = Vec3::new(
-                                unit_t.translation.x
-                                    + 0.25
-                                        * RADIUS
-                                        * if target_t.translation.x < unit_t.translation.x {
-                                            -1.
-                                        } else {
-                                            1.
-                                        },
-                                unit_t.translation.y + 0.25 * RADIUS,
-                                UNITS_Z + 0.1,
-                            );
-
-                            commands.spawn((
-                                Sprite {
-                                    image: assets.image("arrow"),
-                                    ..default()
-                                },
-                                Transform {
-                                    translation: start_pos,
-                                    rotation: Quat::from_rotation_z(FRAC_PI_4),
-                                    scale: unit_t.scale,
-                                },
-                                Arrow::new(
-                                    unit.color,
-                                    unit.name.damage(),
-                                    start_pos,
-                                    target_t.translation,
+                            spawn_arrow_msg.write(SpawnArrowMsg {
+                                color: unit.color,
+                                damage: unit.name.damage(),
+                                start: Vec2::new(
+                                    unit_t.translation.x
+                                        + 0.25
+                                            * RADIUS
+                                            * if target_t.translation.x < unit_t.translation.x {
+                                                -1.
+                                            } else {
+                                                1.
+                                            },
+                                    unit_t.translation.y + 0.25 * RADIUS,
                                 ),
-                                MapCmp,
-                            ));
+                                destination: target_t.translation.truncate(),
+                                entity: None,
+                            });
                         } else {
                             apply_damage_msg
                                 .write(ApplyDamageMsg::new(target_e, unit.name.damage()));

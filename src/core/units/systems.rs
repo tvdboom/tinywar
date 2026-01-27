@@ -188,9 +188,9 @@ pub fn update_buildings(
 
         // Update the destroy timer and despawn when finished
         if let Some(mut destroy) = destroy {
-            destroy.0.tick(scale_duration(time.delta(), settings.speed));
+            destroy.tick(scale_duration(time.delta(), settings.speed));
 
-            if destroy.0.just_finished() {
+            if destroy.just_finished() {
                 despawn_msg.write(DespawnMsg(building_e));
                 if building.is_base {
                     next_game_state.set(GameState::EndGame);

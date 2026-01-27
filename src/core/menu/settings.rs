@@ -1,13 +1,14 @@
 use std::fmt::Debug;
 
-use bevy::prelude::*;
-
 use crate::core::assets::WorldAssets;
 use crate::core::audio::ChangeAudioMsg;
 use crate::core::constants::*;
 use crate::core::menu::utils::add_text;
 use crate::core::settings::{AudioState, PlayerColor, Settings};
+use crate::core::utils::cursor;
 use crate::utils::NameFromEnum;
+use bevy::prelude::*;
+use bevy::window::SystemCursorIcon;
 
 #[derive(Component, Clone, Debug, PartialEq)]
 pub enum SettingsBtn {
@@ -135,6 +136,8 @@ pub fn spawn_label(
                     .observe(recolor_label::<Out>(NORMAL_BUTTON_COLOR))
                     .observe(recolor_label::<Press>(PRESSED_BUTTON_COLOR))
                     .observe(recolor_label::<Release>(HOVERED_BUTTON_COLOR))
+                    .observe(cursor::<Over>(SystemCursorIcon::Pointer))
+                    .observe(cursor::<Out>(SystemCursorIcon::Default))
                     .observe(on_click_label_button)
                     .with_children(|parent| {
                         parent.spawn(add_text(

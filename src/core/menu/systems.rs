@@ -4,7 +4,7 @@ use bevy::prelude::*;
 #[cfg(not(target_arch = "wasm32"))]
 use {
     crate::core::network::local_ip,
-    crate::core::network::{ServerMessage, ServerSendMsg, Ip},
+    crate::core::network::{Ip, ServerMessage, ServerSendMsg},
     bevy_renet::netcode::NetcodeServerTransport,
     bevy_renet::renet::{RenetClient, RenetServer},
 };
@@ -16,6 +16,7 @@ use crate::core::mechanics::spawn::SpawnBuildingMsg;
 use crate::core::menu::buttons::*;
 use crate::core::menu::settings::{spawn_label, SettingsBtn};
 use crate::core::menu::utils::{add_root_node, add_text};
+use crate::core::multiplayer::EntityMap;
 use crate::core::player::{Player, Players, Side};
 use crate::core::settings::{PlayerColor, Settings};
 use crate::core::states::{AppState, GameState};
@@ -203,19 +204,19 @@ pub fn update_ip(
 ) {
     for key in keyboard.get_just_released() {
         match key {
-            KeyCode::Digit0 => ip.0.push('0'),
-            KeyCode::Digit1 => ip.0.push('1'),
-            KeyCode::Digit2 => ip.0.push('2'),
-            KeyCode::Digit3 => ip.0.push('3'),
-            KeyCode::Digit4 => ip.0.push('4'),
-            KeyCode::Digit5 => ip.0.push('5'),
-            KeyCode::Digit6 => ip.0.push('6'),
-            KeyCode::Digit7 => ip.0.push('7'),
-            KeyCode::Digit8 => ip.0.push('8'),
-            KeyCode::Digit9 => ip.0.push('9'),
-            KeyCode::Period => ip.0.push('.'),
+            KeyCode::Digit0 => ip.push('0'),
+            KeyCode::Digit1 => ip.push('1'),
+            KeyCode::Digit2 => ip.push('2'),
+            KeyCode::Digit3 => ip.push('3'),
+            KeyCode::Digit4 => ip.push('4'),
+            KeyCode::Digit5 => ip.push('5'),
+            KeyCode::Digit6 => ip.push('6'),
+            KeyCode::Digit7 => ip.push('7'),
+            KeyCode::Digit8 => ip.push('8'),
+            KeyCode::Digit9 => ip.push('9'),
+            KeyCode::Period => ip.push('.'),
             KeyCode::Backspace => {
-                ip.0.pop();
+                ip.pop();
             },
             KeyCode::Escape => {
                 *ip = Ip::default();
@@ -241,7 +242,7 @@ pub fn update_ip(
                 }
             },
             MenuBtn::FindGame => {
-                if ip.0.parse::<IpAddr>().is_ok() {
+                if ip.parse::<IpAddr>().is_ok() {
                     // Only enable once when the ip becomes valid
                     if *invalid_ip {
                         bgcolor.0 = NORMAL_BUTTON_COLOR;
@@ -337,10 +338,12 @@ pub fn exit_multiplayer_lobby(
     if let Some(client) = client.as_mut() {
         client.disconnect();
         commands.remove_resource::<RenetClient>();
+        println!("Client removed.");
     } else if let Some(mut server) = server {
         server.disconnect_all();
         commands.remove_resource::<RenetServer>();
         commands.remove_resource::<NetcodeServerTransport>();
+        println!("Server removed.");
     }
 }
 
@@ -367,17 +370,26 @@ pub fn start_new_game_message(
             #[cfg(not(target_arch = "wasm32"))]
             {
                 let enemy_id = *server.unwrap().clients_id().first().unwrap();
+                let enemy_color = if settings.color == settings.enemy_color {
+                    match settings.color {
+                        PlayerColor::Red => PlayerColor::Blue,
+                        _ => PlayerColor::Red,
+                    }
+                } else {
+                    settings.enemy_color
+                };
+
                 server_send_msg.write(ServerSendMsg::new(
                     ServerMessage::StartGame {
                         id: enemy_id,
-                        color: settings.enemy_color,
+                        color: enemy_color,
                         enemy_id: 0,
                         enemy_color: settings.color,
                     },
                     Some(enemy_id),
                 ));
 
-                (enemy_id, settings.enemy_color)
+                (enemy_id, enemy_color)
             }
 
             #[cfg(target_arch = "wasm32")]
@@ -387,17 +399,21 @@ pub fn start_new_game_message(
         settings.enemy_color = enemy_color;
 
         // Spawn starting buildings
-        for (id, position) in [0, enemy_id].into_iter().zip(Map::starting_positions()) {
+        for (color, position) in
+            [settings.color, enemy_color].into_iter().zip(Map::starting_positions())
+        {
             spawn_building_msg.write(SpawnBuildingMsg {
-                id,
+                color,
                 building: BuildingName::default(),
                 position,
                 is_base: true,
                 with_units: true,
+                entity: None,
             });
         }
 
         commands.insert_resource(Host);
+        commands.insert_resource(EntityMap::default());
         commands.insert_resource(Players {
             me: Player::new(0, settings.color, Side::Left),
             enemy: Player::new(enemy_id, enemy_color, Side::Right),

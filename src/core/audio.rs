@@ -11,7 +11,7 @@ use crate::core::menu::settings::SettingsBtn;
 use crate::core::settings::{AudioState, Settings};
 use crate::core::utils::cursor;
 
-#[derive(Resource, Default)]
+#[derive(Resource, Default, Deref, DerefMut)]
 pub struct PlayingAudio(pub HashMap<&'static str, Handle<AudioInstance>>);
 
 impl PlayingAudio {
@@ -78,7 +78,7 @@ pub struct MuteAudioMsg;
 #[derive(Component)]
 pub struct MusicBtnCmp;
 
-#[derive(Message)]
+#[derive(Message, Deref)]
 pub struct ChangeAudioMsg(pub Option<AudioState>);
 
 pub fn setup_audio(mut commands: Commands, assets: Local<WorldAssets>) {
@@ -119,7 +119,7 @@ pub fn update_audio(
     assets: Local<WorldAssets>,
 ) {
     for msg in change_audio_msg.read() {
-        settings.audio = msg.0.unwrap_or(match settings.audio {
+        settings.audio = msg.unwrap_or(match settings.audio {
             AudioState::Mute => AudioState::Sound,
             AudioState::Sound => AudioState::Music,
             AudioState::Music => AudioState::Mute,
@@ -183,7 +183,7 @@ pub fn play_audio(
         if settings.audio != AudioState::Mute {
             let mut new_sound = false;
 
-            if let Some(handle) = playing_audio.0.get(msg.name) {
+            if let Some(handle) = playing_audio.get(msg.name) {
                 if let Some(instance) = audio_instances.get_mut(handle) {
                     if matches!(
                         instance.state(),
@@ -205,7 +205,7 @@ pub fn play_audio(
                 }
             } else if msg.is_background {
                 if settings.audio != AudioState::Sound {
-                    playing_audio.0.insert(
+                    playing_audio.insert(
                         msg.name,
                         audio
                             .play(assets.audio(msg.name))
@@ -220,7 +220,7 @@ pub fn play_audio(
             }
 
             if new_sound {
-                playing_audio.0.insert(
+                playing_audio.insert(
                     msg.name,
                     audio.play(assets.audio(msg.name)).with_volume(msg.volume).handle(),
                 );
@@ -235,7 +235,7 @@ pub fn pause_audio(
     mut audio_instances: ResMut<Assets<AudioInstance>>,
 ) {
     for msg in pause_audio_msg.read() {
-        if let Some(handle) = playing_audio.0.get(msg.name) {
+        if let Some(handle) = playing_audio.get(msg.name) {
             if let Some(instance) = audio_instances.get_mut(handle) {
                 instance.pause(PlayingAudio::TWEEN);
             }
@@ -249,10 +249,10 @@ pub fn stop_audio(
     mut audio_instances: ResMut<Assets<AudioInstance>>,
 ) {
     for msg in stop_audio_msg.read() {
-        if let Some(handle) = playing_audio.0.get(msg.name) {
+        if let Some(handle) = playing_audio.get(msg.name) {
             if let Some(instance) = audio_instances.get_mut(handle) {
                 instance.stop(PlayingAudio::TWEEN);
-                playing_audio.0.remove(msg.name);
+                playing_audio.remove(msg.name);
             }
         }
     }
@@ -265,7 +265,7 @@ pub fn mute_audio(
     mut stop_audio_msg: MessageWriter<StopAudioMsg>,
 ) {
     for _ in mute_audio_msg.read() {
-        for name in playing_audio.0.keys() {
+        for name in playing_audio.keys() {
             if *name == "music" {
                 pause_audio_msg.write(PauseAudioMsg::new(name));
             } else {

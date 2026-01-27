@@ -18,8 +18,8 @@ use strum::IntoEnumIterator;
 #[derive(Component)]
 pub struct UiCmp;
 
-#[derive(Component)]
-pub struct AdvanceBannerCmp(pub bool);
+#[derive(Component, Deref)]
+pub struct AdvanceBannerCmp(pub Side);
 
 #[derive(Component)]
 pub struct TextAdvanceBannerCmp;
@@ -76,15 +76,15 @@ pub fn draw_ui(
             MapCmp,
         ))
         .with_children(|parent| {
-            let mut spawn = |index: usize, width: Val, component: Option<bool>| {
+            let mut spawn = |index: usize, width: Val, component: Option<Side>| {
                 let mut p = parent.spawn((
                     Node {
                         width,
                         height: Val::Percent(100.),
                         align_items: AlignItems::Center,
                         justify_content: component
-                            .map(|c| {
-                                if c {
+                            .map(|side| {
+                                if side == Side::Left {
                                     JustifyContent::Start
                                 } else {
                                     JustifyContent::End
@@ -102,9 +102,9 @@ pub fn draw_ui(
                     ),
                 ));
 
-                if let Some(me) = component {
+                if let Some(side) = component {
                     p.insert((
-                        AdvanceBannerCmp(me),
+                        AdvanceBannerCmp(side),
                         ZIndex(1),
                         children![(
                             Node {
@@ -120,16 +120,16 @@ pub fn draw_ui(
             };
 
             // Own banner
-            let me = players.me.color.index();
-            spawn(me * 7, Val::Auto, None);
-            spawn(1 + me * 7, Val::Auto, None);
-            spawn(3 + me * 7, Val::Percent(45.), Some(true));
+            let left = players.get_by_side(Side::Left).color.index();
+            spawn(left * 7, Val::Auto, None);
+            spawn(1 + left * 7, Val::Auto, None);
+            spawn(3 + left * 7, Val::Percent(45.), Some(Side::Left));
 
             // Enemy banner
-            let enemy = players.enemy.color.index();
-            spawn(3 + enemy * 7, Val::Percent(45.), Some(false));
-            spawn(5 + enemy * 7, Val::Auto, None);
-            spawn(6 + enemy * 7, Val::Auto, None);
+            let right = players.get_by_side(Side::Right).color.index();
+            spawn(3 + right * 7, Val::Percent(45.), Some(Side::Right));
+            spawn(5 + right * 7, Val::Auto, None);
+            spawn(6 + right * 7, Val::Auto, None);
         });
 
     // Draw direction
@@ -555,7 +555,7 @@ pub fn update_ui(
     let enemy_score = 1. - me_score;
 
     for (entity, mut node, banner) in &mut advance_q {
-        let n = if banner.0 {
+        let n = if banner.0 == players.me.side {
             me_score
         } else {
             enemy_score

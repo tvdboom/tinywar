@@ -87,6 +87,7 @@ impl Plugin for GamePlugin {
             .add_message::<QueueUnitMsg>()
             .add_message::<SpawnBuildingMsg>()
             .add_message::<SpawnUnitMsg>()
+            .add_message::<SpawnArrowMsg>()
             .add_message::<DespawnMsg>()
             .add_message::<ApplyDamageMsg>()
             // Resources
@@ -134,9 +135,6 @@ impl Plugin for GamePlugin {
         for state in AppState::iter().filter(|s| *s != AppState::Game) {
             app.add_systems(OnEnter(state), setup_menu)
                 .add_systems(OnExit(state), despawn::<MenuCmp>);
-
-            #[cfg(not(target_arch = "wasm32"))]
-            app.add_systems(OnExit(state), exit_multiplayer_lobby);
         }
         app.add_systems(Update, start_new_game_message.run_if(not(in_state(AppState::Game))));
 
@@ -161,6 +159,7 @@ impl Plugin for GamePlugin {
                     queue_resolve,
                     spawn_unit_message,
                     spawn_building_message,
+                    spawn_arrow_message,
                     update_units,
                     update_buildings,
                     (apply_movement, resolve_attack, apply_damage_message)
@@ -182,6 +181,7 @@ impl Plugin for GamePlugin {
             // Networking && multiplayer
             .add_message::<ServerSendMsg>()
             .add_message::<ClientSendMsg>()
+            .add_message::<UpdatePopulationMsg>()
             .init_resource::<Ip>()
             .init_resource::<EntityMap>()
             .add_systems(
@@ -208,7 +208,7 @@ impl Plugin for GamePlugin {
                     (client_send_message,).run_if(resource_exists::<RenetClient>),
                 ),
             )
-            .add_systems(OnExit(AppState::Game), exit_multiplayer_lobby)
+            .add_systems(OnEnter(AppState::MultiPlayerMenu), exit_multiplayer_lobby)
             // Persistence
             .add_message::<SaveGameMsg>()
             .add_message::<LoadGameMsg>()

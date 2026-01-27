@@ -8,7 +8,7 @@ use std::collections::VecDeque;
 use std::time::Duration;
 use strum::IntoEnumIterator;
 
-#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 pub enum Side {
     Left,
     Right,
@@ -122,15 +122,7 @@ pub struct Players {
 }
 
 impl Players {
-    pub fn get(&self, id: ClientId) -> &Player {
-        if self.me.id == id {
-            &self.me
-        } else {
-            &self.enemy
-        }
-    }
-
-    pub fn get_mut(&mut self, id: ClientId) -> &mut Player {
+    pub fn get_by_id_mut(&mut self, id: ClientId) -> &mut Player {
         if self.me.id == id {
             &mut self.me
         } else {
@@ -138,7 +130,19 @@ impl Players {
         }
     }
 
-    pub fn iter_mut(&mut self) -> impl Iterator<Item = &mut Player> {
-        [&mut self.me, &mut self.enemy].into_iter()
+    pub fn get_by_color(&self, color: PlayerColor) -> &Player {
+        if self.me.color == color {
+            &self.me
+        } else {
+            &self.enemy
+        }
+    }
+
+    pub fn get_by_side(&self, side: Side) -> &Player {
+        if self.me.side == side {
+            &self.me
+        } else {
+            &self.enemy
+        }
     }
 }

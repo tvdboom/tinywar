@@ -1,6 +1,13 @@
 use std::net::{IpAddr, UdpSocket};
 use std::time::SystemTime;
 
+use crate::core::mechanics::spawn::SpawnUnitMsg;
+use crate::core::menu::buttons::LobbyTextCmp;
+use crate::core::multiplayer::{Population, UpdatePopulationMsg};
+use crate::core::player::{Player, Players, Side};
+use crate::core::settings::{PlayerColor, Settings};
+use crate::core::states::{AppState, GameState};
+use crate::core::units::units::UnitName;
 use bevy::prelude::*;
 use bevy_renet::netcode::*;
 use bevy_renet::renet::*;
@@ -8,15 +15,9 @@ use bincode::config::standard;
 use bincode::serde::{decode_from_slice, encode_to_vec};
 use serde::{Deserialize, Serialize};
 
-use crate::core::menu::buttons::LobbyTextCmp;
-use crate::core::multiplayer::{Population, UpdatePopulationMsg};
-use crate::core::player::{Player, Players, Side};
-use crate::core::settings::{PlayerColor, Settings};
-use crate::core::states::{AppState, GameState};
-
 const PROTOCOL_ID: u64 = 7;
 
-#[derive(Resource)]
+#[derive(Resource, Deref, DerefMut)]
 pub struct Ip(pub String);
 
 impl Default for Ip {
@@ -88,6 +89,7 @@ impl ServerMessage {
 pub enum ClientMessage {
     ShareColor(PlayerColor),
     State(GameState),
+    SpawnUnit(UnitName),
 }
 
 impl ClientMessage {
@@ -210,6 +212,7 @@ pub fn server_send_message(
 pub fn server_receive_message(
     mut server: ResMut<RenetServer>,
     mut settings: ResMut<Settings>,
+    mut spawn_unit_msg: MessageWriter<SpawnUnitMsg>,
     game_state: Res<State<GameState>>,
     mut next_game_state: ResMut<NextState<GameState>>,
 ) {
@@ -227,6 +230,9 @@ pub fn server_receive_message(
                     GameState::Playing => next_game_state.set(GameState::Playing),
                     GameState::EndGame => next_game_state.set(GameState::EndGame),
                     _ => (),
+                },
+                ClientMessage::SpawnUnit(unit) => {
+                    spawn_unit_msg.write(SpawnUnitMsg::new(settings.enemy_color, unit));
                 },
             }
         }
@@ -308,10 +314,7 @@ pub fn client_receive_message(
                 population,
             } => {
                 settings.speed = speed;
-                update_population_msg.write(UpdatePopulationMsg {
-                    id: 0,
-                    population,
-                });
+                update_population_msg.write(UpdatePopulationMsg(population));
             },
             _ => unreachable!(),
         }

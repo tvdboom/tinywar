@@ -1,4 +1,6 @@
-use crate::core::constants::{BUILDINGS_Z, CAPPED_DELTA_SECS_SPEED, RADIUS, SEPARATION_RADIUS};
+use crate::core::constants::{
+    ARROW_Z, BUILDINGS_Z, CAPPED_DELTA_SECS_SPEED, RADIUS, SEPARATION_RADIUS,
+};
 use crate::core::map::map::Map;
 use crate::core::mechanics::combat::{ApplyDamageMsg, Arrow};
 use crate::core::mechanics::spawn::DespawnMsg;
@@ -249,7 +251,7 @@ fn move_arrow(
     let arc_height = progress * (1. - progress) * 4. * arrow.total_distance * 0.2;
 
     // Set new position with arc
-    arrow_t.translation = horizontal_pos + Vec3::Y * arc_height;
+    arrow_t.translation = (horizontal_pos + Vec2::Y * arc_height).extend(ARROW_Z);
 
     // Check if the arrow hit someone (in this or adjacent tiles)
     let tile = Map::world_to_tile(&arrow_t.translation);
@@ -271,9 +273,9 @@ fn move_arrow(
     let next_progress = ((arrow.traveled + 1.) / arrow.total_distance).min(1.);
     let next_horizontal = arrow.start.lerp(arrow.destination, next_progress);
     let next_arc_height = next_progress * (1. - next_progress) * 4.0 * arrow.total_distance * 0.2;
-    let next_pos = next_horizontal + Vec3::Y * next_arc_height;
+    let next_pos = next_horizontal + Vec2::Y * next_arc_height;
 
-    let velocity = next_pos - arrow_t.translation;
+    let velocity = next_pos - arrow_t.translation.truncate();
     if velocity.length() > 0.01 {
         let angle = velocity.y.atan2(velocity.x);
         arrow_t.rotation = Quat::from_rotation_z(angle);

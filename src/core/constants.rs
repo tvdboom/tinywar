@@ -22,7 +22,8 @@ pub const WATER_COLOR: Color = Color::srgb_u8(71, 171, 169);
 pub const MAP_Z: f32 = 0.;
 pub const BUILDINGS_Z: f32 = 1.;
 pub const UNITS_Z: f32 = 2.;
-pub const EXPLOSION_Z: f32 = 3.;
+pub const ARROW_Z: f32 = 3.;
+pub const EXPLOSION_Z: f32 = 4.;
 
 /// Game settings
 pub const MAX_QUEUE_LENGTH: usize = 10;
@@ -30,7 +31,7 @@ pub const MIN_GAME_SPEED: f32 = 0.25;
 pub const MAX_GAME_SPEED: f32 = 16.;
 pub const FRAME_RATE: u64 = 100;
 pub const CAPPED_DELTA_SECS_SPEED: f32 = 0.05;
-pub const UPDATE_TIMER: u64 = 200;
+pub const UPDATE_TIMER: u64 = 50;
 
 /// Units
 pub const UNIT_DEFAULT_SIZE: f32 = 192.;
