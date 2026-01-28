@@ -10,6 +10,7 @@ use {
 };
 
 use crate::core::assets::WorldAssets;
+use crate::core::boosts::AfterBoostCount;
 use crate::core::constants::*;
 use crate::core::map::map::Map;
 use crate::core::mechanics::spawn::SpawnBuildingMsg;
@@ -18,7 +19,7 @@ use crate::core::menu::settings::{spawn_label, SettingsBtn};
 use crate::core::menu::utils::{add_root_node, add_text};
 use crate::core::multiplayer::EntityMap;
 use crate::core::player::{Player, Players, Side};
-use crate::core::settings::{PlayerColor, Settings};
+use crate::core::settings::{GameMode, PlayerColor, Settings};
 use crate::core::states::{AppState, GameState};
 use crate::core::units::buildings::BuildingName;
 
@@ -39,7 +40,7 @@ pub fn setup_menu(
 ) {
     commands
         .spawn((
-            add_root_node(false),
+            add_root_node(true),
             ImageNode::new(assets.image("bg")),
             MenuCmp,
         ))
@@ -359,13 +360,13 @@ pub fn start_new_game_message(
     mut next_game_state: ResMut<NextState<GameState>>,
 ) {
     if !start_new_game_msg.is_empty() {
-        let (enemy_id, enemy_color) = if *app_state.get() == AppState::SinglePlayerMenu {
+        let (game_mode, enemy_id, enemy_color) = if *app_state.get() == AppState::SinglePlayerMenu {
             let enemy_color = match settings.color {
                 PlayerColor::Red => PlayerColor::Blue,
                 _ => PlayerColor::Red,
             };
 
-            (1, enemy_color)
+            (GameMode::SinglePlayer, 1, enemy_color)
         } else {
             #[cfg(not(target_arch = "wasm32"))]
             {
@@ -387,13 +388,14 @@ pub fn start_new_game_message(
                     Some(enemy_id),
                 ));
 
-                (enemy_id, enemy_color)
+                (GameMode::Multiplayer, enemy_id, enemy_color)
             }
 
             #[cfg(target_arch = "wasm32")]
             unreachable!()
         };
 
+        settings.game_mode = game_mode;
         settings.enemy_color = enemy_color;
 
         // Spawn starting buildings
@@ -410,7 +412,10 @@ pub fn start_new_game_message(
             });
         }
 
+        settings.reset();
+
         commands.insert_resource(Host);
+        commands.insert_resource(AfterBoostCount::default());
         commands.insert_resource(EntityMap::default());
         commands.insert_resource(Players {
             me: Player::new(0, settings.color, Side::Left),

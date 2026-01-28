@@ -68,6 +68,7 @@ impl FromWorld for WorldAssets {
 
         let audio = HashMap::from([
             ("music", assets.load("audio/music.ogg")),
+            ("message", assets.load("audio/message.ogg")),
             ("button", assets.load("audio/button.ogg")),
             ("click", assets.load("audio/click.ogg")),
             ("error", assets.load("audio/error.ogg")),
@@ -110,6 +111,11 @@ impl FromWorld for WorldAssets {
             ("fire1", assets.load("images/effects/fire1.png")),
             ("fire2", assets.load("images/effects/fire2.png")),
             ("fire3", assets.load("images/effects/fire3.png")),
+            // Boosts
+            ("boost", assets.load("images/boosts/boost.png")),
+            ("selected boost", assets.load("images/boosts/selected boost.png")),
+            ("active boost", assets.load("images/boosts/active boost.png")),
+            ("longbow", assets.load("images/boosts/longbow.png")),
         ]);
 
         let mut atlas: HashMap<&'static str, AtlasInfo> = HashMap::new();

@@ -48,6 +48,7 @@ pub fn check_keys_menu(
                 GameState::GameMenu => next_game_state.set(GameState::Playing),
                 GameState::EndGame => next_app_state.set(AppState::MainMenu),
                 GameState::Settings => next_game_state.set(GameState::GameMenu),
+                _ => (),
             },
             _ => (),
         }

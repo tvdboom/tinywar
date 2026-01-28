@@ -1,3 +1,4 @@
+use crate::core::boosts::Boost;
 use crate::core::map::map::Path;
 use crate::core::settings::PlayerColor;
 use crate::core::units::units::UnitName;
@@ -89,6 +90,23 @@ impl QueuedUnit {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct SelectedBoost {
+    pub name: Boost,
+    pub active: bool,
+    pub timer: Timer,
+}
+
+impl SelectedBoost {
+    pub fn new(name: Boost) -> Self {
+        Self {
+            name,
+            active: false,
+            timer: Timer::new(Duration::from_secs(name.duration()), TimerMode::Once),
+        }
+    }
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Player {
     pub id: ClientId,
     pub color: PlayerColor,
@@ -96,6 +114,8 @@ pub struct Player {
     pub direction: PlayerDirection,
     pub queue: VecDeque<QueuedUnit>,
     pub queue_default: UnitName,
+    pub boosts: Vec<SelectedBoost>,
+    pub drained_boosts: Vec<Boost>,
 }
 
 impl Player {
@@ -107,6 +127,8 @@ impl Player {
             direction: PlayerDirection::default(),
             queue: VecDeque::new(),
             queue_default: UnitName::default(),
+            boosts: vec![],
+            drained_boosts: vec![],
         }
     }
 

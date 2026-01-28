@@ -60,8 +60,7 @@ pub fn setup_end_game(
                     end: Vec2::splat(0.6),
                 },
             )
-            .with_repeat_count(RepeatCount::Finite(2))
-            .with_repeat_strategy(RepeatStrategy::MirroredRepeat),
+            .with_repeat(RepeatCount::Finite(2), RepeatStrategy::MirroredRepeat),
         ),
         Pickable::IGNORE,
         UiCmp,

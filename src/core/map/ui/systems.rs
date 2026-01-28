@@ -1,10 +1,10 @@
 use crate::core::assets::WorldAssets;
 use crate::core::audio::PlayAudioMsg;
-use crate::core::constants::MAX_QUEUE_LENGTH;
+use crate::core::constants::{MAX_BOOSTS, MAX_QUEUE_LENGTH};
 use crate::core::map::systems::MapCmp;
 use crate::core::mechanics::queue::QueueUnitMsg;
 use crate::core::menu::utils::add_text;
-use crate::core::player::{Players, Side};
+use crate::core::player::{Players, SelectedBoost, Side};
 use crate::core::settings::{PlayerColor, Settings};
 use crate::core::states::GameState;
 use crate::core::units::units::{Action, Unit, UnitName};
@@ -14,6 +14,7 @@ use bevy::prelude::*;
 use bevy::window::SystemCursorIcon;
 use std::collections::HashMap;
 use strum::IntoEnumIterator;
+use crate::core::boosts::InitiateBoostMsg;
 
 #[derive(Component)]
 pub struct UiCmp;
@@ -27,8 +28,23 @@ pub struct TextAdvanceBannerCmp;
 #[derive(Component)]
 pub struct DirectionCmp;
 
+#[derive(Component, Deref)]
+pub struct BoostBoxCmp(pub usize);
+
+#[derive(Component)]
+pub struct BoostBoxImageCmp;
+
+#[derive(Component)]
+pub struct BoostBoxTimerCmp;
+
 #[derive(Component)]
 pub struct HoverBoxCmp;
+
+#[derive(Component)]
+pub struct HoverBoxBoostCmp;
+
+#[derive(Component)]
+pub struct HoverBoxBoostLabelCmp;
 
 #[derive(Component)]
 pub struct ShopButtonCmp(pub UnitName);
@@ -283,13 +299,13 @@ pub fn draw_ui(
                                 ))
                                 .with_children(|parent| {
                                 parent
-                                    .spawn((Node {
+                                    .spawn(Node {
                                         justify_content: JustifyContent::Center,
                                         align_items: AlignItems::Center,
                                         flex_direction: FlexDirection::Column,
                                         margin: UiRect::ZERO.with_bottom(Val::Percent(5.)),
                                         ..default()
-                                    },))
+                                    })
                                     .with_children(|parent| {
                                         parent.spawn((
                                             Node {
@@ -373,6 +389,127 @@ pub fn draw_ui(
                         );
                     }
                 });
+        });
+
+    // Draw boosts
+    commands
+        .spawn((
+            Node {
+                top: Val::Percent(10.),
+                right: Val::Percent(1.),
+                width: Val::Percent(8.),
+                height: Val::Percent(90.),
+                position_type: PositionType::Absolute,
+                flex_direction: FlexDirection::Column,
+                ..default()
+            },
+            Pickable::IGNORE,
+            UiCmp,
+            MapCmp,
+        ))
+        .with_children(|parent| {
+            for i in 0..MAX_BOOSTS {
+                parent
+                    .spawn((
+                        Node {
+                            display: Display::None,
+                            width: Val::Percent(100.),
+                            height: Val::Percent(20.),
+                            align_items: AlignItems::Center,
+                            justify_items: JustifyItems::Center,
+                            margin: UiRect::ZERO.with_bottom(Val::Percent(5.)),
+                            ..default()
+                        },
+                        ImageNode::new(assets.image("selected boost")),
+                        BoostBoxCmp(i),
+                        children![
+                            (
+                                Node {
+                                    top: Val::Percent(28.),
+                                    left: Val::Percent(11.),
+                                    height: Val::Percent(57.),
+                                    width: Val::Percent(80.),
+                                    position_type: PositionType::Absolute,
+                                    ..default()
+                                },
+                                ImageNode::new(assets.image("longbow")),
+                                BoostBoxImageCmp,
+                                children![(
+                                    Node {
+                                        bottom: Val::Percent(0.),
+                                        right: Val::Percent(5.),
+                                        position_type: PositionType::Absolute,
+                                        ..default()
+                                    },
+                                    BoostBoxTimerCmp,
+                                    add_text("", "bold", 13., &assets, &window,),
+                                )],
+                            ),
+                            (
+                                Node {
+                                    top: Val::Percent(10.),
+                                    left: Val::Percent(-235.),
+                                    width: Val::Percent(250.),
+                                    height: Val::Percent(90.),
+                                    position_type: PositionType::Absolute,
+                                    padding: UiRect::horizontal(Val::Percent(40.))
+                                        .with_top(Val::Percent(20.)),
+                                    ..default()
+                                },
+                                ImageNode::new(assets.image("banner")),
+                                Pickable::IGNORE,
+                                GlobalZIndex(2),
+                                Visibility::Hidden,
+                                HoverBoxBoostCmp,
+                                children![(
+                                    TextColor(Color::BLACK),
+                                    add_text("", "bold", 10., &assets, &window),
+                                    HoverBoxBoostLabelCmp,
+                                )],
+                            )
+                        ],
+                    ))
+                    .observe(cursor::<Over>(SystemCursorIcon::Pointer))
+                    .observe(cursor::<Out>(SystemCursorIcon::Default))
+                    .observe(
+                        |event: On<Pointer<Over>>,
+                         mut box_q: Query<&mut Visibility, With<HoverBoxBoostCmp>>,
+                         children_q: Query<&Children>| {
+                            for child in children_q.iter_descendants(event.entity) {
+                                if let Ok(mut v) = box_q.get_mut(child) {
+                                    *v = Visibility::Inherited;
+                                }
+                            }
+                        },
+                    )
+                    .observe(
+                        |event: On<Pointer<Out>>,
+                         mut box_q: Query<&mut Visibility, With<HoverBoxBoostCmp>>,
+                         children_q: Query<&Children>| {
+                            for child in children_q.iter_descendants(event.entity) {
+                                if let Ok(mut v) = box_q.get_mut(child) {
+                                    *v = Visibility::Hidden;
+                                }
+                            }
+                        },
+                    )
+                    .observe(
+                        |event: On<Pointer<Click>>,
+                         box_q: Query<&BoostBoxCmp>,
+                         mut players: ResMut<Players>,
+                         game_state: Res<State<GameState>>,   
+                         mut initiate_boost_msg: MessageWriter<InitiateBoostMsg>| {
+                            if event.button == PointerButton::Primary && *game_state.get() == GameState::Playing {
+                                if let Ok(bbox) = box_q.get(event.entity) {
+                                    if let Some(boost) = players.me.boosts.get_mut(**bbox) {
+                                        boost.active = true;
+                                        initiate_boost_msg.write(InitiateBoostMsg(boost.name));
+                                    }
+                                }
+                            }
+                        },
+                    );
+            }
         });
 
     // Draw queue
@@ -502,30 +639,17 @@ pub fn draw_ui(
     ));
 }
 
+/// Updates the advance banner and shop labels
 pub fn update_ui(
     unit_q: Query<(&Transform, &Unit)>,
     mut direction_q: Query<&mut ImageNode, With<DirectionCmp>>,
     mut advance_q: Query<(Entity, &mut Node, &AdvanceBannerCmp)>,
     mut text_q: Query<&mut Text, With<TextAdvanceBannerCmp>>,
     mut label_q: Query<(&mut Text, &ShopLabelCmp), Without<TextAdvanceBannerCmp>>,
-    mut queue_q: Query<(&mut Node, &mut SwordQueueCmp), Without<AdvanceBannerCmp>>,
-    mut images_q: Query<(Entity, &mut ImageNode, &QueueButtonCmp), Without<DirectionCmp>>,
-    mut progress_wrapper_q: Query<(Entity, &mut Visibility), With<QueueProgressWrapperCmp>>,
-    mut progress_inner_q: Query<
-        &mut Node,
-        (With<QueueProgressCmp>, Without<SwordQueueCmp>, Without<AdvanceBannerCmp>),
-    >,
-    mut speed_q: Query<
-        &mut Text,
-        (With<SpeedCmp>, Without<ShopLabelCmp>, Without<TextAdvanceBannerCmp>),
-    >,
     children_q: Query<&Children>,
-    settings: Res<Settings>,
     players: Res<Players>,
-    game_state: Res<State<GameState>>,
     assets: Local<WorldAssets>,
 ) {
-    // Update the advance banner and shop labels
     let (mut me, mut enemy) = (50., 50.); // Start with prior
     let mut counts = HashMap::new();
     for (t, unit) in unit_q.iter() {
@@ -581,6 +705,61 @@ pub fn update_ui(
     for mut image in &mut direction_q {
         image.image = assets.image(players.me.direction.image());
         image.flip_y = players.me.direction.flip_y()
+    }
+}
+
+/// Updates the boosts, queue and speed indicator
+pub fn update_ui2(
+    mut boost_q: Query<(Entity, &mut Node, &mut ImageNode, &BoostBoxCmp)>,
+    mut image_q: Query<
+        &mut ImageNode,
+        (With<BoostBoxImageCmp>, Without<BoostBoxCmp>, Without<QueueButtonCmp>),
+    >,
+    mut timer_q: Query<&mut Text, With<BoostBoxTimerCmp>>,
+    mut label_q: Query<&mut Text, (With<HoverBoxBoostLabelCmp>, Without<BoostBoxTimerCmp>)>,
+    mut queue_q: Query<(&mut Node, &mut SwordQueueCmp), Without<BoostBoxCmp>>,
+    mut images_q: Query<
+        (Entity, &mut ImageNode, &QueueButtonCmp),
+        (Without<BoostBoxCmp>, Without<BoostBoxImageCmp>),
+    >,
+    mut progress_wrapper_q: Query<(Entity, &mut Visibility), With<QueueProgressWrapperCmp>>,
+    mut progress_inner_q: Query<&mut Node, (Without<BoostBoxCmp>, Without<SwordQueueCmp>)>,
+    mut speed_q: Query<&mut Text, (Without<HoverBoxBoostLabelCmp>, Without<BoostBoxTimerCmp>)>,
+    children_q: Query<&Children>,
+    settings: Res<Settings>,
+    players: Res<Players>,
+    game_state: Res<State<GameState>>,
+    assets: Local<WorldAssets>,
+) {
+    // Update the boosts
+    let boosts: Vec<&SelectedBoost> = players.me.boosts.iter().rev().collect();
+    for (box_e, mut node, mut image, bbox) in &mut boost_q {
+        // Update the nth box, which corresponds to the nth boost
+        node.display = if let Some(boost) = boosts.get(**bbox) {
+            image.image = assets.image(if boost.active {
+                "active boost"
+            } else {
+                "selected boost"
+            });
+
+            for child in children_q.iter_descendants(box_e) {
+                if let Ok(mut image) = image_q.get_mut(child) {
+                    image.image = assets.image(boost.name.to_lowername());
+                }
+
+                if let Ok(mut text) = timer_q.get_mut(child) {
+                    **text = format!("{}s", boost.timer.duration().as_secs())
+                }
+
+                if let Ok(mut text) = label_q.get_mut(child) {
+                    **text = boost.name.description().to_string();
+                }
+            }
+
+            Display::Flex
+        } else {
+            Display::None
+        }
     }
 
     // Update the queue

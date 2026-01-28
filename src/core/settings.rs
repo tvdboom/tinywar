@@ -1,6 +1,13 @@
+use crate::core::constants::BOOST_TIMER;
 use bevy::prelude::*;
 use serde::{Deserialize, Serialize};
 use strum_macros::EnumIter;
+
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
+pub enum GameMode {
+    SinglePlayer,
+    Multiplayer,
+}
 
 #[derive(EnumIter, Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 pub enum PlayerColor {
@@ -42,11 +49,13 @@ pub enum AudioState {
     Music,
 }
 
-#[derive(Resource, Clone, Copy, Debug, Serialize, Deserialize)]
+#[derive(Resource, Clone, Debug, Serialize, Deserialize)]
 pub struct Settings {
+    pub game_mode: GameMode,
     pub color: PlayerColor,
     pub enemy_color: PlayerColor,
     pub speed: f32,
+    pub boost_timer: Timer,
     pub audio: AudioState,
     pub autosave: bool,
 }
@@ -54,11 +63,20 @@ pub struct Settings {
 impl Default for Settings {
     fn default() -> Self {
         Self {
+            game_mode: GameMode::SinglePlayer,
             color: PlayerColor::Blue,
             enemy_color: PlayerColor::Red,
             speed: 1.0,
+            boost_timer: Timer::from_seconds(BOOST_TIMER, TimerMode::Repeating),
             audio: AudioState::default(),
             autosave: true,
         }
+    }
+}
+
+impl Settings {
+    pub fn reset(&mut self) {
+        self.speed = 1.0;
+        self.boost_timer.reset();
     }
 }

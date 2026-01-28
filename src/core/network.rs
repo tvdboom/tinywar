@@ -5,7 +5,7 @@ use crate::core::mechanics::spawn::SpawnUnitMsg;
 use crate::core::menu::buttons::LobbyTextCmp;
 use crate::core::multiplayer::{EntityMap, Population, UpdatePopulationMsg};
 use crate::core::player::{Player, PlayerDirection, Players, Side};
-use crate::core::settings::{PlayerColor, Settings};
+use crate::core::settings::{GameMode, PlayerColor, Settings};
 use crate::core::states::{AppState, GameState};
 use crate::core::units::units::UnitName;
 use bevy::prelude::*;
@@ -280,6 +280,7 @@ pub fn client_receive_message(
                 player,
                 enemy_color,
             } => {
+                settings.game_mode = GameMode::Multiplayer;
                 settings.color = player.color;
                 settings.enemy_color = enemy_color;
 
@@ -297,7 +298,7 @@ pub fn client_receive_message(
                 {
                     next_game_state.set(GameState::Paused)
                 },
-                s @ GameState::Playing => next_game_state.set(s),
+                GameState::Playing | GameState::BoostSelection => next_game_state.set(state),
                 _ => (),
             },
             _ => unreachable!(),

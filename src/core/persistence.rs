@@ -3,6 +3,7 @@ use std::fs::File;
 use std::io;
 use std::io::{Read, Write};
 
+use crate::core::audio::ChangeAudioMsg;
 use crate::core::mechanics::combat::Arrow;
 use crate::core::menu::systems::Host;
 use crate::core::multiplayer::{Population, UpdatePopulationMsg};
@@ -19,7 +20,6 @@ use bincode::config::standard;
 use bincode::serde::{decode_from_slice, encode_to_vec};
 use rfd::FileDialog;
 use serde::{Deserialize, Serialize};
-use crate::core::audio::ChangeAudioMsg;
 
 #[derive(Serialize, Deserialize)]
 pub struct SaveAll {
@@ -141,7 +141,7 @@ pub fn save_game(
 
             let file_path_str = file_path.to_string_lossy().to_string();
             let data = SaveAll {
-                settings: *settings,
+                settings: settings.clone(),
                 players: players.clone(),
                 population: Population {
                     units: unit_q

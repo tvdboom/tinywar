@@ -1,5 +1,6 @@
 mod assets;
 mod audio;
+mod boosts;
 mod camera;
 mod constants;
 pub mod map;
@@ -19,11 +20,13 @@ mod units;
 mod utils;
 
 use crate::core::audio::*;
+use crate::core::boosts::{after_boost_check, check_boost_timer, initiate_boost_message, update_boosts, CardCmp, InitiateBoostMsg};
 use crate::core::camera::*;
 use crate::core::constants::{UPDATE_TIMER, WATER_COLOR};
 use crate::core::map::map::Map;
 use crate::core::map::systems::{draw_map, setup_end_game, MapCmp};
-use crate::core::map::ui::systems::{draw_ui, update_ui, UiCmp};
+use crate::core::map::ui::boosts::{setup_after_boost, setup_boost_selection};
+use crate::core::map::ui::systems::{draw_ui, update_ui, update_ui2, UiCmp};
 use crate::core::mechanics::combat::{apply_damage_message, resolve_attack, ApplyDamageMsg};
 use crate::core::mechanics::movement::apply_movement;
 use crate::core::mechanics::queue::*;
@@ -90,6 +93,7 @@ impl Plugin for GamePlugin {
             .add_message::<SpawnUnitMsg>()
             .add_message::<SpawnArrowMsg>()
             .add_message::<DespawnMsg>()
+            .add_message::<InitiateBoostMsg>()
             .add_message::<ApplyDamageMsg>()
             // Resources
             .insert_resource(ClearColor(WATER_COLOR))
@@ -152,18 +156,20 @@ impl Plugin for GamePlugin {
             .add_systems(PostUpdate, on_resize_message)
             // In-game states
             .add_systems(OnEnter(AppState::Game), (draw_map, draw_ui))
-            .add_systems(Update, (update_ui, update_animations).in_set(InGameSet))
+            .add_systems(Update, (update_ui, update_ui2, update_animations).in_set(InGameSet))
             .add_systems(Update, queue_message.in_set(InPlayingOrPausedSet))
             .add_systems(
                 Update,
                 (
+                    update_boosts,
+                    initiate_boost_message,
                     queue_resolve,
                     spawn_unit_message,
                     spawn_building_message,
                     spawn_arrow_message,
                     update_units,
                     update_buildings,
-                    (apply_movement, resolve_attack, apply_damage_message)
+                    (check_boost_timer, apply_movement, resolve_attack, apply_damage_message)
                         .chain()
                         .run_if(resource_exists::<Host>),
                 )
@@ -171,6 +177,10 @@ impl Plugin for GamePlugin {
             )
             .add_systems(Last, despawn_message.in_set(InPlayingSet))
             .add_systems(OnExit(AppState::Game), (despawn::<MapCmp>, reset_camera))
+            .add_systems(OnEnter(GameState::BoostSelection), setup_boost_selection)
+            .add_systems(OnExit(GameState::BoostSelection), despawn::<CardCmp>)
+            .add_systems(OnEnter(GameState::AfterBoostSelection), setup_after_boost)
+            .add_systems(OnExit(GameState::AfterBoostSelection), despawn::<CardCmp>)
             .add_systems(OnEnter(GameState::GameMenu), setup_game_menu)
             .add_systems(OnExit(GameState::GameMenu), despawn::<MenuCmp>)
             .add_systems(OnEnter(GameState::EndGame), (despawn::<UiCmp>, setup_end_game))
@@ -196,6 +206,12 @@ impl Plugin for GamePlugin {
             .add_systems(Update, update_game_state.run_if(state_changed::<GameState>))
             .add_systems(Update, update_player.in_set(InGameSet))
             .add_systems(Update, server_update.run_if(resource_exists::<RenetServer>))
+            .add_systems(
+                Update,
+                after_boost_check
+                    .run_if(resource_exists::<RenetServer>)
+                    .run_if(in_state(GameState::AfterBoostSelection)),
+            )
             .add_systems(Update, update_ip.run_if(in_state(AppState::MultiPlayerMenu)))
             .add_systems(
                 Last,

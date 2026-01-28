@@ -32,6 +32,8 @@ pub const MAX_GAME_SPEED: f32 = 16.;
 pub const FRAME_RATE: u64 = 100;
 pub const CAPPED_DELTA_SECS_SPEED: f32 = 0.05;
 pub const UPDATE_TIMER: u64 = 50;
+pub const BOOST_TIMER: f32 = 2.;
+pub const MAX_BOOSTS: usize = 5;
 
 /// Units
 pub const UNIT_DEFAULT_SIZE: f32 = 192.;

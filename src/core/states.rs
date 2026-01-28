@@ -19,6 +19,8 @@ pub enum GameState {
     #[default]
     Playing,
     Paused,
+    BoostSelection,
+    AfterBoostSelection,
     GameMenu,
     Settings,
     EndGame,
