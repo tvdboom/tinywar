@@ -1,18 +1,14 @@
-use crate::core::assets::WorldAssets;
-use crate::core::audio::PlayAudioMsg;
-use crate::core::constants::{EXPLOSION_Z, FRAME_RATE, RADIUS};
-use crate::core::map::utils::SpriteFrameLens;
+use crate::core::constants::RADIUS;
+use crate::core::mechanics::explosion::ExplosionMsg;
 use crate::core::mechanics::spawn::{DespawnMsg, SpawnArrowMsg};
+use crate::core::player::Players;
 use crate::core::settings::PlayerColor;
 use crate::core::units::buildings::Building;
 use crate::core::units::units::{Action, Unit, UnitName};
 use bevy::prelude::*;
-use bevy_tweening::{CycleCompletedEvent, Delay, Tween, TweenAnim};
-use rand::{rng, Rng};
+use bevy_tweening::CycleCompletedEvent;
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
-use crate::core::mechanics::explosion::ExplosionMsg;
-use crate::core::player::Players;
 
 #[derive(Component, Deref, DerefMut)]
 pub struct BuildingDestroyCmp(pub Timer);

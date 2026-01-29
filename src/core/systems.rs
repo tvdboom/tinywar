@@ -92,7 +92,7 @@ pub fn check_keys_game(
             match game_state.get() {
                 GameState::Playing => next_game_state.set(GameState::Paused),
                 GameState::Paused => next_game_state.set(GameState::Playing),
-                _ => unreachable!(),
+                _ => (),
             }
         } else if host.is_some()
             && keyboard.any_pressed([KeyCode::ControlLeft, KeyCode::ControlRight])

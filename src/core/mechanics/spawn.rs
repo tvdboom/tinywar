@@ -30,6 +30,7 @@ pub struct SpawnBuildingMsg {
     pub building: BuildingName,
     pub position: Vec2,
     pub is_base: bool,
+    pub health: f32,
     pub with_units: bool,
     pub entity: Option<Entity>,
 }
@@ -93,7 +94,7 @@ pub fn spawn_building_message(
                     scale: Vec3::splat(BUILDING_SCALE),
                     ..default()
                 },
-                Building::new(msg.building, msg.color, msg.is_base),
+                Building::new(msg.building, msg.color, msg.is_base, msg.health),
                 MapCmp,
                 children![(
                     Sprite {
@@ -101,7 +102,7 @@ pub fn spawn_building_message(
                         custom_size: Some(Vec2::new(0.5 * size.x, 15.)),
                         ..default()
                     },
-                    Transform::from_xyz(0., msg.building.size().x * 0.4, 0.1),
+                    Transform::from_xyz(0., size.y * 0.5, EXPLOSION_Z - 0.2),
                     Visibility::Hidden,
                     HealthWrapperCmp,
                     children![(
@@ -110,7 +111,7 @@ pub fn spawn_building_message(
                             custom_size: Some(Vec2::new(0.49 * size.x, 13.)),
                             ..default()
                         },
-                        Transform::from_xyz(0., 0., 0.2),
+                        Transform::from_xyz(0., 0., EXPLOSION_Z - 0.1),
                         HealthCmp,
                     )],
                 )],

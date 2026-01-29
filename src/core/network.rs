@@ -2,6 +2,7 @@ use std::net::{IpAddr, UdpSocket};
 use std::time::SystemTime;
 
 use crate::core::boosts::{ActivateBoostMsg, AfterBoostCount, Boost};
+use crate::core::mechanics::explosion::ExplosionMsg;
 use crate::core::mechanics::spawn::SpawnUnitMsg;
 use crate::core::menu::buttons::LobbyTextCmp;
 use crate::core::multiplayer::{EntityMap, Population, UpdatePopulationMsg};
@@ -15,7 +16,6 @@ use bevy_renet::renet::*;
 use bincode::config::standard;
 use bincode::serde::{decode_from_slice, encode_to_vec};
 use serde::{Deserialize, Serialize};
-use crate::core::mechanics::explosion::ExplosionMsg;
 
 const PROTOCOL_ID: u64 = 7;
 

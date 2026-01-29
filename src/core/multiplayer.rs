@@ -139,6 +139,7 @@ pub fn update_population_message(
                     building: b.name,
                     position: *t,
                     is_base: b.is_base,
+                    health: b.health,
                     with_units: false,
                     entity: Some(*building_e),
                 });

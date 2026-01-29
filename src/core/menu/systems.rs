@@ -407,6 +407,7 @@ pub fn start_new_game_message(
                 building: BuildingName::default(),
                 position,
                 is_base: true,
+                health: BuildingName::default().health(),
                 with_units: true,
                 entity: None,
             });

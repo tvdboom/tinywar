@@ -1,3 +1,4 @@
+use crate::core::boosts::Boost;
 use crate::core::constants::UNIT_DEFAULT_SIZE;
 use crate::core::map::map::Path;
 use crate::core::player::Player;
@@ -7,7 +8,6 @@ use rand::prelude::IndexedRandom;
 use rand::rng;
 use serde::{Deserialize, Serialize};
 use strum_macros::{EnumDiscriminants, EnumIter};
-use crate::core::boosts::Boost;
 
 #[derive(EnumIter, Clone, Copy, Debug, Default, Eq, Hash, PartialEq, Serialize, Deserialize)]
 pub enum UnitName {
@@ -130,8 +130,8 @@ impl UnitName {
 
     pub fn range(&self) -> f32 {
         match self {
-            UnitName::Archer => 4.,
-            UnitName::Priest => 4.,
+            UnitName::Archer => 3.,
+            UnitName::Priest => 3.,
             _ => 1.,
         }
     }
@@ -195,21 +195,21 @@ impl Unit {
         } else {
             self.name.range()
         };
-        
+
         if self.name == UnitName::Archer && player.has_boost(Boost::Longbow) {
             range *= 1.5;
         }
-        
+
         range
     }
-    
+
     pub fn damage(&self, player: &Player) -> f32 {
         let mut damage = self.name.damage();
-        
+
         if self.name == UnitName::Warrior && player.has_boost(Boost::Warrior) {
             damage *= 1.3;
         }
-        
+
         damage
     }
 }

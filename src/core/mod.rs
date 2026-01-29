@@ -20,10 +20,7 @@ mod units;
 mod utils;
 
 use crate::core::audio::*;
-use crate::core::boosts::{
-    activate_boost_message, after_boost_check, check_boost_timer, update_boosts, ActivateBoostMsg,
-    CardCmp,
-};
+use crate::core::boosts::*;
 use crate::core::camera::*;
 use crate::core::constants::{UPDATE_TIMER, WATER_COLOR};
 use crate::core::map::map::Map;
@@ -31,6 +28,7 @@ use crate::core::map::systems::{draw_map, setup_end_game, MapCmp};
 use crate::core::map::ui::boosts::{setup_after_boost, setup_boost_selection};
 use crate::core::map::ui::systems::{draw_ui, update_ui, update_ui2, UiCmp};
 use crate::core::mechanics::combat::{apply_damage_message, resolve_attack, ApplyDamageMsg};
+use crate::core::mechanics::explosion::{explosion_message, update_explosions, ExplosionMsg};
 use crate::core::mechanics::movement::apply_movement;
 use crate::core::mechanics::queue::*;
 use crate::core::mechanics::spawn::*;
@@ -53,7 +51,6 @@ use {
     crate::core::persistence::{load_game, save_game, LoadGameMsg, SaveGameMsg},
     bevy_renet::renet::{RenetClient, RenetServer},
 };
-use crate::core::mechanics::explosion::{explosion_message, ExplosionMsg};
 
 pub struct GamePlugin;
 
@@ -161,7 +158,10 @@ impl Plugin for GamePlugin {
             .add_systems(PostUpdate, on_resize_message)
             // In-game states
             .add_systems(OnEnter(AppState::Game), (draw_map, draw_ui))
-            .add_systems(Update, (update_ui, update_ui2, update_animations).in_set(InGameSet))
+            .add_systems(
+                Update,
+                (update_ui, update_ui2, update_animations, update_explosions).in_set(InGameSet),
+            )
             .add_systems(Update, queue_message.in_set(InPlayingOrPausedSet))
             .add_systems(
                 Update,

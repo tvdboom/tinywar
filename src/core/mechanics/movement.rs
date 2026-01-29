@@ -48,7 +48,7 @@ fn move_unit(
     let mut path = map.path(&unit.path);
 
     let player = players.get_by_color(unit.color);
-    
+
     // Reverse paths for the enemy
     if player.side == Side::Right {
         path.reverse();

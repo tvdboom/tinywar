@@ -118,7 +118,7 @@ pub fn activate_boost_message(
         } else {
             match msg.boost {
                 Boost::Castle => {
-                    if let Some((base_e, base_t, _)) =
+                    if let Some((base_e, base_t, base)) =
                         building_q.iter().find(|(_, _, b)| b.is_base && b.color == player.color)
                     {
                         despawn_msg.write(DespawnMsg(base_e));
@@ -128,6 +128,8 @@ pub fn activate_boost_message(
                             building: BuildingName::Castle,
                             position: base_t.translation.truncate(),
                             is_base: true,
+                            health: BuildingName::Castle.health() * base.health
+                                / base.name.health(),
                             with_units: true,
                             entity: None,
                         });
@@ -144,6 +146,7 @@ pub fn activate_boost_message(
                         building: BuildingName::Tower,
                         position,
                         is_base: false,
+                        health: BuildingName::Tower.health(),
                         with_units: true,
                         entity: None,
                     });

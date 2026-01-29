@@ -29,7 +29,7 @@ impl BuildingName {
                 vec![Vec2::new(-70., 35.), Vec2::new(0., 20.), Vec2::new(70., 35.)]
             },
             BuildingName::Tower => {
-                vec![Vec2::new(0., 35.)]
+                vec![Vec2::new(0., 30.)]
             },
         }
     }
@@ -52,12 +52,12 @@ pub struct Building {
 }
 
 impl Building {
-    pub fn new(name: BuildingName, color: PlayerColor, is_base: bool) -> Self {
+    pub fn new(name: BuildingName, color: PlayerColor, is_base: bool, health: f32) -> Self {
         Self {
             name,
             color,
             is_base,
-            health: name.health(),
+            health,
         }
     }
 }
