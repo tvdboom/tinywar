@@ -20,7 +20,10 @@ mod units;
 mod utils;
 
 use crate::core::audio::*;
-use crate::core::boosts::{after_boost_check, check_boost_timer, initiate_boost_message, update_boosts, CardCmp, InitiateBoostMsg};
+use crate::core::boosts::{
+    activate_boost_message, after_boost_check, check_boost_timer, update_boosts, ActivateBoostMsg,
+    CardCmp,
+};
 use crate::core::camera::*;
 use crate::core::constants::{UPDATE_TIMER, WATER_COLOR};
 use crate::core::map::map::Map;
@@ -93,7 +96,7 @@ impl Plugin for GamePlugin {
             .add_message::<SpawnUnitMsg>()
             .add_message::<SpawnArrowMsg>()
             .add_message::<DespawnMsg>()
-            .add_message::<InitiateBoostMsg>()
+            .add_message::<ActivateBoostMsg>()
             .add_message::<ApplyDamageMsg>()
             // Resources
             .insert_resource(ClearColor(WATER_COLOR))
@@ -161,8 +164,8 @@ impl Plugin for GamePlugin {
             .add_systems(
                 Update,
                 (
+                    activate_boost_message,
                     update_boosts,
-                    initiate_boost_message,
                     queue_resolve,
                     spawn_unit_message,
                     spawn_building_message,
@@ -204,7 +207,6 @@ impl Plugin for GamePlugin {
             )
             .add_systems(PreUpdate, update_population_message.in_set(InGameSet))
             .add_systems(Update, update_game_state.run_if(state_changed::<GameState>))
-            .add_systems(Update, update_player.in_set(InGameSet))
             .add_systems(Update, server_update.run_if(resource_exists::<RenetServer>))
             .add_systems(
                 Update,
@@ -223,7 +225,13 @@ impl Plugin for GamePlugin {
                             .in_set(InPlayingSet),
                     )
                         .run_if(resource_exists::<RenetServer>),
-                    (client_send_message,).run_if(resource_exists::<RenetClient>),
+                    (
+                        client_send_message,
+                        client_send_status
+                            .run_if(on_timer(Duration::from_millis(UPDATE_TIMER)))
+                            .in_set(InPlayingSet),
+                    )
+                        .run_if(resource_exists::<RenetClient>),
                 ),
             )
             .add_systems(OnEnter(AppState::MultiPlayerMenu), exit_multiplayer_lobby)

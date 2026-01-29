@@ -1,3 +1,4 @@
+use crate::core::boosts::Boost;
 use crate::core::settings::PlayerColor;
 use crate::core::units::buildings::BuildingName;
 use crate::core::units::units::{ActionKind, UnitName};
@@ -72,6 +73,7 @@ impl FromWorld for WorldAssets {
             ("button", assets.load("audio/button.ogg")),
             ("click", assets.load("audio/click.ogg")),
             ("error", assets.load("audio/error.ogg")),
+            ("horn", assets.load("audio/horn.ogg")),
             ("defeat", assets.load("audio/defeat.ogg")),
             ("victory", assets.load("audio/victory.ogg")),
             ("explosion", assets.load("audio/explosion.ogg")),
@@ -115,8 +117,12 @@ impl FromWorld for WorldAssets {
             ("boost", assets.load("images/boosts/boost.png")),
             ("selected boost", assets.load("images/boosts/selected boost.png")),
             ("active boost", assets.load("images/boosts/active boost.png")),
-            ("longbow", assets.load("images/boosts/longbow.png")),
         ]);
+
+        for boost in Boost::iter() {
+            let name = Box::leak(Box::new(boost.to_lowername())).as_str();
+            images.insert(name, assets.load(format!("images/boosts/{}.png", boost.to_lowername())));
+        }
 
         let mut atlas: HashMap<&'static str, AtlasInfo> = HashMap::new();
 

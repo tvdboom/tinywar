@@ -1,10 +1,11 @@
 use std::net::{IpAddr, UdpSocket};
 use std::time::SystemTime;
 
+use crate::core::boosts::{ActivateBoostMsg, AfterBoostCount, Boost};
 use crate::core::mechanics::spawn::SpawnUnitMsg;
 use crate::core::menu::buttons::LobbyTextCmp;
 use crate::core::multiplayer::{EntityMap, Population, UpdatePopulationMsg};
-use crate::core::player::{Player, PlayerDirection, Players, Side};
+use crate::core::player::{Player, Players, Side};
 use crate::core::settings::{GameMode, PlayerColor, Settings};
 use crate::core::states::{AppState, GameState};
 use crate::core::units::units::UnitName;
@@ -83,10 +84,9 @@ impl ServerMessage {
 pub enum ClientMessage {
     ShareColor(PlayerColor),
     State(GameState),
-    Player {
-        direction: PlayerDirection,
-    },
+    Status(Player),
     SpawnUnit(UnitName),
+    ActivateBoost(Boost),
 }
 
 impl ClientMessage {
@@ -210,7 +210,9 @@ pub fn server_receive_message(
     mut server: ResMut<RenetServer>,
     mut settings: ResMut<Settings>,
     mut players: Option<ResMut<Players>>,
+    mut boost_count: ResMut<AfterBoostCount>,
     mut spawn_unit_msg: MessageWriter<SpawnUnitMsg>,
+    mut activate_boost_msg: MessageWriter<ActivateBoostMsg>,
     game_state: Res<State<GameState>>,
     mut next_game_state: ResMut<NextState<GameState>>,
 ) {
@@ -226,18 +228,20 @@ pub fn server_receive_message(
                         next_game_state.set(GameState::Paused);
                     },
                     GameState::Playing => next_game_state.set(GameState::Playing),
+                    GameState::AfterBoostSelection => **boost_count += 1,
                     GameState::EndGame => next_game_state.set(GameState::EndGame),
                     _ => (),
                 },
-                ClientMessage::Player {
-                    direction,
-                } => {
+                ClientMessage::Status(player) => {
                     if let Some(players) = &mut players {
-                        players.enemy.direction = direction;
+                        players.enemy = player;
                     }
                 },
                 ClientMessage::SpawnUnit(unit) => {
                     spawn_unit_msg.write(SpawnUnitMsg::new(settings.enemy_color, unit));
+                },
+                ClientMessage::ActivateBoost(boost) => {
+                    activate_boost_msg.write(ActivateBoostMsg::new(settings.enemy_color, boost));
                 },
             }
         }

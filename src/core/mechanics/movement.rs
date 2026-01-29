@@ -21,7 +21,7 @@ fn get_tiles_at_distance(pos: &TilePos, d: u32) -> HashSet<TilePos> {
 }
 
 /// Return the next tile to walk to, which is the one after the closest path tile
-fn get_target_tile(tile: &TilePos, path: &[TilePos]) -> TilePos {
+fn get_target_tile(tile: TilePos, path: &[TilePos]) -> TilePos {
     let closest = path
         .iter()
         .enumerate()
@@ -29,7 +29,7 @@ fn get_target_tile(tile: &TilePos, path: &[TilePos]) -> TilePos {
         .map(|(i, _)| path.get(i + 1).unwrap_or(path.last().unwrap()))
         .unwrap();
 
-    Map::find_path(tile, closest)[1]
+    Map::find_path(tile, *closest)[1]
 }
 
 fn move_unit(
@@ -57,8 +57,8 @@ fn move_unit(
         return;
     }
 
-    let target_tile = get_target_tile(&tile, &path);
-    let target_pos = Map::tile_to_world(&target_tile).extend(unit_t.translation.z);
+    let target_tile = get_target_tile(tile, &path);
+    let target_pos = Map::tile_to_world(target_tile).extend(unit_t.translation.z);
     let target_delta = (target_pos - unit_t.translation).normalize();
 
     let mut separation = Vec3::ZERO;
@@ -181,10 +181,10 @@ fn move_unit(
 
     let next_tile = Map::world_to_tile(&next_pos);
 
-    if tile == next_tile || Map::is_walkable(&next_tile) {
+    if tile == next_tile || Map::is_walkable(next_tile) {
         // Check if the tile below is walkable. If not, restrict movement to the top part
-        if !Map::is_walkable(&TilePos::new(next_tile.x, next_tile.y + 1)) {
-            let bottom_limit = Map::tile_to_world(&next_tile).y - Map::TILE_SIZE as f32 * 0.25;
+        if !Map::is_walkable(TilePos::new(next_tile.x, next_tile.y + 1)) {
+            let bottom_limit = Map::tile_to_world(next_tile).y - Map::TILE_SIZE as f32 * 0.25;
             if next_pos.y < bottom_limit {
                 next_pos.y = bottom_limit;
             }

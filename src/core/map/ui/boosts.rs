@@ -22,6 +22,7 @@ use strum::IntoEnumIterator;
 
 pub fn setup_boost_selection(
     mut commands: Commands,
+    settings: Res<Settings>,
     players: Res<Players>,
     mut next_game_state: ResMut<NextState<GameState>>,
     assets: Local<WorldAssets>,
@@ -29,7 +30,12 @@ pub fn setup_boost_selection(
 ) {
     // Skip boost selection if already at max. number of boosts
     if players.me.boosts.len() == MAX_BOOSTS {
-        next_game_state.set(GameState::AfterBoostSelection);
+        if settings.game_mode == GameMode::SinglePlayer {
+            next_game_state.set(GameState::Playing);
+        } else {
+            next_game_state.set(GameState::AfterBoostSelection);
+        }
+        return;
     }
 
     // The possible boosts to select are those that aren't drained nor in the current selected list
@@ -90,7 +96,7 @@ pub fn setup_boost_selection(
                                         ..default()
                                     },
                                     add_text(
-                                        format!("{}s", boost.duration()),
+                                        if boost.duration() > 0 { format!("{}s", boost.duration()) } else { "".to_owned() },
                                         "bold",
                                         18.,
                                         &assets,

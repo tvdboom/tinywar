@@ -40,12 +40,11 @@ pub fn update_game_state(
     });
 }
 
-pub fn update_player(players: Res<Players>, mut client_send_message: MessageWriter<ClientSendMsg>) {
-    if players.is_changed() {
-        client_send_message.write(ClientSendMsg::new(ClientMessage::Player {
-            direction: players.me.direction,
-        }));
-    }
+pub fn client_send_status(
+    players: Res<Players>,
+    mut client_send_message: MessageWriter<ClientSendMsg>,
+) {
+    client_send_message.write(ClientSendMsg::new(ClientMessage::Status(players.me.clone())));
 }
 
 pub fn server_send_status(

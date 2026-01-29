@@ -38,8 +38,8 @@ impl Default for Map {
         let paths = Path::iter()
             .map(|path| {
                 // Compute two segments: start → waypoint → end
-                let mut firs_segment = Self::find_path(&start, &path.waypoint());
-                let mut second_segment = Self::find_path(&path.waypoint(), &end);
+                let mut firs_segment = Self::find_path(start, path.waypoint());
+                let mut second_segment = Self::find_path(path.waypoint(), end);
 
                 // Remove the waypoint (overlap) from second segment
                 second_segment.remove(0);
@@ -93,10 +93,10 @@ impl Map {
     ];
 
     pub fn starting_positions() -> Vec<Vec2> {
-        Self::STARTING_POSITIONS.iter().map(Self::tile_to_world).collect()
+        Self::STARTING_POSITIONS.into_iter().map(Self::tile_to_world).collect()
     }
 
-    pub fn get_neighbors(pos: &TilePos) -> Vec<TilePos> {
+    pub fn get_neighbors(pos: TilePos) -> Vec<TilePos> {
         let moves = [(-1, 0), (1, 0), (0, -1), (0, 1), (-1, -1), (-1, 1), (1, -1), (1, 1)];
 
         moves
@@ -112,7 +112,7 @@ impl Map {
 
                 let new_pos = TilePos::new(x as u32, y as u32);
 
-                if !Self::is_walkable(&new_pos) {
+                if !Self::is_walkable(new_pos) {
                     return None;
                 }
 
@@ -120,7 +120,7 @@ impl Map {
                 if dx != 0 && dy != 0 {
                     let pos1 = TilePos::new((pos.x as i32 + dx) as u32, pos.y); // Horizontal
                     let pos2 = TilePos::new(pos.x, (pos.y as i32 + dy) as u32); // Vertical
-                    if !Self::is_walkable(&pos1) || !Self::is_walkable(&pos2) {
+                    if !Self::is_walkable(pos1) || !Self::is_walkable(pos2) {
                         return None;
                     }
                 }
@@ -130,16 +130,16 @@ impl Map {
             .collect()
     }
 
-    pub fn is_walkable(pos: &TilePos) -> bool {
+    pub fn is_walkable(pos: TilePos) -> bool {
         Self::WALKABLE_BITS[pos.y as usize] & (1 << (Self::MAP_SIZE.x - 1 - pos.x)) != 0
     }
 
-    pub fn find_path(start: &TilePos, end: &TilePos) -> Vec<TilePos> {
+    pub fn find_path(start: TilePos, end: TilePos) -> Vec<TilePos> {
         astar(
-            start,
-            |pos| Self::get_neighbors(pos).into_iter().map(|pos| (pos, 1)).collect::<Vec<_>>(),
+            &start,
+            |pos| Self::get_neighbors(*pos).into_iter().map(|pos| (pos, 1)).collect::<Vec<_>>(),
             |pos| (start.x as i32 - pos.x as i32).abs() + (start.y as i32 - pos.y as i32).abs(),
-            |pos| pos == end,
+            |pos| *pos == end,
         )
         .map(|(path, _)| path)
         .unwrap_or_else(|| panic!("Unable to find a path from {start:?} to {end:?}."))
@@ -149,7 +149,7 @@ impl Map {
         self.paths.get(path).unwrap().clone()
     }
 
-    pub fn tile_to_world(tile: &TilePos) -> Vec2 {
+    pub fn tile_to_world(tile: TilePos) -> Vec2 {
         Vec2::new(
             Map::MAP_VIEW.min.x + Self::TILE_SIZE as f32 * (tile.x as f32 + 0.5),
             Map::MAP_VIEW.max.y - Self::TILE_SIZE as f32 * (tile.y as f32 + 0.5),

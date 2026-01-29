@@ -81,7 +81,13 @@ pub fn check_keys_game(
     game_state: Res<State<GameState>>,
     mut next_game_state: ResMut<NextState<GameState>>,
 ) {
-    if matches!(game_state.get(), GameState::Playing | GameState::Paused) {
+    if matches!(
+        game_state.get(),
+        GameState::Playing
+            | GameState::Paused
+            | GameState::BoostSelection
+            | GameState::AfterBoostSelection
+    ) {
         if keyboard.just_released(KeyCode::Space) {
             match game_state.get() {
                 GameState::Playing => next_game_state.set(GameState::Paused),

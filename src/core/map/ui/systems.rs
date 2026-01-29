@@ -1,5 +1,6 @@
 use crate::core::assets::WorldAssets;
 use crate::core::audio::PlayAudioMsg;
+use crate::core::boosts::ActivateBoostMsg;
 use crate::core::constants::{MAX_BOOSTS, MAX_QUEUE_LENGTH};
 use crate::core::map::systems::MapCmp;
 use crate::core::mechanics::queue::QueueUnitMsg;
@@ -14,7 +15,6 @@ use bevy::prelude::*;
 use bevy::window::SystemCursorIcon;
 use std::collections::HashMap;
 use strum::IntoEnumIterator;
-use crate::core::boosts::InitiateBoostMsg;
 
 #[derive(Component)]
 pub struct UiCmp;
@@ -497,15 +497,21 @@ pub fn draw_ui(
                         |event: On<Pointer<Click>>,
                          box_q: Query<&BoostBoxCmp>,
                          mut players: ResMut<Players>,
-                         game_state: Res<State<GameState>>,   
-                         mut initiate_boost_msg: MessageWriter<InitiateBoostMsg>| {
+                         game_state: Res<State<GameState>>,
+                         mut play_audio_msg: MessageWriter<PlayAudioMsg>,
+                         mut activate_boost_msg: MessageWriter<ActivateBoostMsg>| {
                             if event.button == PointerButton::Primary && *game_state.get() == GameState::Playing {
                                 if let Ok(bbox) = box_q.get(event.entity) {
+                                    let color = players.me.color;
                                     if let Some(boost) = players.me.boosts.get_mut(**bbox) {
-                                        boost.active = true;
-                                        initiate_boost_msg.write(InitiateBoostMsg(boost.name));
+                                        if !boost.active {
+                                            boost.active = true;
+                                            activate_boost_msg.write(ActivateBoostMsg::new(color, boost.name));
+                                        }
                                     }
                                 }
+                            } else {
+                                play_audio_msg.write(PlayAudioMsg::new("error"));
                             }
                         },
                     );
@@ -724,7 +730,10 @@ pub fn update_ui2(
     >,
     mut progress_wrapper_q: Query<(Entity, &mut Visibility), With<QueueProgressWrapperCmp>>,
     mut progress_inner_q: Query<&mut Node, (Without<BoostBoxCmp>, Without<SwordQueueCmp>)>,
-    mut speed_q: Query<&mut Text, (Without<HoverBoxBoostLabelCmp>, Without<BoostBoxTimerCmp>)>,
+    mut speed_q: Query<
+        &mut Text,
+        (With<SpeedCmp>, Without<HoverBoxBoostLabelCmp>, Without<BoostBoxTimerCmp>),
+    >,
     children_q: Query<&Children>,
     settings: Res<Settings>,
     players: Res<Players>,
@@ -734,8 +743,9 @@ pub fn update_ui2(
     // Update the boosts
     let boosts: Vec<&SelectedBoost> = players.me.boosts.iter().rev().collect();
     for (box_e, mut node, mut image, bbox) in &mut boost_q {
-        // Update the nth box, which corresponds to the nth boost
-        node.display = if let Some(boost) = boosts.get(**bbox) {
+        // Update the nth box, which corresponds to the len(boosts) - n - 1 boost (since rev)
+        let idx = players.me.boosts.len().checked_sub(**bbox + 1);
+        node.display = if let Some(boost) = idx.and_then(|i| boosts.get(i)) {
             image.image = assets.image(if boost.active {
                 "active boost"
             } else {
@@ -748,7 +758,11 @@ pub fn update_ui2(
                 }
 
                 if let Ok(mut text) = timer_q.get_mut(child) {
-                    **text = format!("{}s", boost.timer.duration().as_secs())
+                    **text = if boost.name.duration() == 0 {
+                        "".to_owned()
+                    } else {
+                        format!("{}s", boost.timer.remaining().as_secs())
+                    };
                 }
 
                 if let Ok(mut text) = label_q.get_mut(child) {
@@ -807,7 +821,7 @@ pub fn update_ui2(
 
     // Update speed indicator
     if let Ok(mut text) = speed_q.single_mut() {
-        text.0 = format!(
+        **text = format!(
             "{}x{}",
             settings.speed,
             match game_state.get() {
