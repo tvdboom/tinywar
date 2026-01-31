@@ -41,23 +41,27 @@ pub struct AfterBoostCount(pub usize);
 
 #[derive(EnumIter, Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 pub enum Boost {
-    Armor,
+    ArmorGain,
     Arrows,
+    BlockRange,
     Boss,
     BuildingsBlock,
     BuildingsDefense,
     Castle,
     Clone,
     DoubleQueue,
-    Healing,
+    InstantHealing,
     InstantArmy,
     Lancer,
     Longbow,
+    MagicSwap,
     Meditation,
     NoCollision,
+    Penetration,
     Repair,
     Respawn,
     Run,
+    Siege,
     SpawnTime,
     Tower,
     Warrior,
@@ -66,23 +70,27 @@ pub enum Boost {
 impl Boost {
     pub fn description(&self) -> &'static str {
         match self {
-            Boost::Armor => "Decrease damage to all your units by 30%.",
+            Boost::ArmorGain => "Decrease damage to all your units by 30%.",
             Boost::Arrows => "Your archers deal 30% more damage.",
+            Boost::BlockRange => "Block all damage on units from enemy ranged units.",
             Boost::Boss => "Spawn a mighty warrior with increased health and damage.",
             Boost::BuildingsBlock => "Block all damage dealt to your buildings.",
             Boost::BuildingsDefense => "Increase the damage of all units on buildings by 100%.",
             Boost::Castle => "Upgrade your base to a castle.",
             Boost::Clone => "Clones 8 random units of yours (in position).",
             Boost::DoubleQueue => "Two units are queued at the same time.",
-            Boost::Healing => "Instantly heal all your units to their maximum health.",
+            Boost::InstantHealing => "Instantly heal all your units to their maximum health.",
             Boost::InstantArmy => "Immediately spawn 6 random units in the base.",
             Boost::Lancer => "Increase your lancer's damage by 60%.",
             Boost::Longbow => "Increase the range of your archers by 50%.",
+            Boost::MagicSwap => "All your unit's attack damage become magic damage.",
             Boost::Meditation => "Your priest's healing is 70% stronger.",
             Boost::NoCollision => "Your units don't collide with each other.",
+            Boost::Penetration => "Increase the armor penetration of all your units with 5 points.",
             Boost::Repair => "Instantly repair all your buildings to their maximum health.",
             Boost::Respawn => "Respawn all dead units on buildings.",
             Boost::Run => "Increase the speed of all your units by 100%.",
+            Boost::Siege => "Increase the damage to buildings by 50%.",
             Boost::SpawnTime => "Reduce all spawning times by 20%.",
             Boost::Tower => "Spawn a defense tower near the base.",
             Boost::Warrior => "Increase your warrior's damage by 50%.",
@@ -99,16 +107,20 @@ impl Boost {
 
     pub fn duration(&self) -> u64 {
         match self {
-            Boost::Armor => 20,
+            Boost::ArmorGain => 20,
             Boost::Arrows => 40,
+            Boost::BlockRange => 15,
             Boost::BuildingsBlock => 10,
             Boost::BuildingsDefense => 25,
             Boost::DoubleQueue => 20,
             Boost::Lancer => 40,
             Boost::Longbow => 40,
+            Boost::MagicSwap => 40,
             Boost::Meditation => 40,
             Boost::NoCollision => 20,
+            Boost::Penetration => 30,
             Boost::Run => 15,
+            Boost::Siege => 10,
             Boost::SpawnTime => 90,
             Boost::Warrior => 40,
             _ => 0,
@@ -204,7 +216,7 @@ pub fn activate_boost_message(
                         });
                     }
                 },
-                Boost::Healing => unit_q
+                Boost::InstantHealing => unit_q
                     .iter_mut()
                     .filter(|(_, u)| u.color == player.color)
                     .for_each(|(_, mut u)| u.health = u.name.health()),

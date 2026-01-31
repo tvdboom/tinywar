@@ -172,7 +172,7 @@ pub fn update_animations(
     // Play/pause tween animations
     anim_q.iter_mut().for_each(|(mut t, e)| {
         t.speed = settings.speed as f64;
-        
+
         // Skip pause for explosions
         if e.is_none() {
             t.playback_state = match game_state.get() {

@@ -22,28 +22,24 @@ impl UnitName {
     pub fn description(&self) -> &'static str {
         match self {
             UnitName::Warrior => {
-                "\
-                The warrior is a balanced front-line fighter with solid health and damage. \
+                "The warrior is a balanced front-line fighter with solid health and damage. \
                 With moderate speed and close-range attacks, warriors excel at holding the \
                 line and engaging enemies in direct combat."
             },
             UnitName::Lancer => {
-                "\
-                Lancers are swift and deadly units with. They sacrifice some durability for \
+                "Lancers are swift and deadly units with. They sacrifice some durability for \
                 superior speed and reduced spawning times, making them excellent for quick \
                 strikes against enemy formations."
             },
             UnitName::Archer => {
-                "\
-                Archers have low health and damage, but shoot fast arrows at enemies at a \
+                "Archers have low health and damage, but shoot fast arrows at enemies at a \
                 distance. Their exceptional range allows them to harass foes from safety, \
-                though they're vulnerable in close combat and need protection from melee units."
+                though they're vulnerable in close combat."
             },
             UnitName::Priest => {
-                "\
-                Priests heal damaged units over a range. A priest cannot attack nor heal himself. \
+                "Priests heal damaged units over a range. A priest cannot attack nor heal himself. \
                 These fragile support units are slow-moving and defenseless, but their powerful \
-                healing can turn the tide of battle by keeping your army in fighting condition."
+                healing can turn the tide of battle."
             },
         }
     }
@@ -103,17 +99,17 @@ impl UnitName {
 
     pub fn spawn_duration(&self) -> u64 {
         match self {
-            UnitName::Warrior => 2000,
-            UnitName::Lancer => 1500,
-            UnitName::Archer => 3000,
-            UnitName::Priest => 3500,
+            UnitName::Warrior => 2500,
+            UnitName::Lancer => 1800,
+            UnitName::Archer => 3300,
+            UnitName::Priest => 3400,
         }
     }
 
     pub fn speed(&self) -> f32 {
         match self {
             UnitName::Warrior => 30.,
-            UnitName::Lancer => 47.,
+            UnitName::Lancer => 35.,
             UnitName::Archer => 25.,
             UnitName::Priest => 25.,
         }

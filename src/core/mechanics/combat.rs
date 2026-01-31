@@ -72,10 +72,21 @@ fn calculate_damage(
     attacker: &Player,
     defender: &Player,
 ) -> f32 {
-    let attack_damage = unit.name.attack_damage();
-    let magic_damage = unit.name.magic_damage();
+    let mut attack_damage = unit.name.attack_damage();
+    let mut magic_damage = unit.name.magic_damage();
 
-    let effective_armor = armor - unit.name.armor_pen();
+    if attacker.has_boost(Boost::MagicSwap) {
+        magic_damage += attack_damage;
+        attack_damage = 0.;
+    }
+
+    let effective_armor = armor
+        - unit.name.armor_pen()
+        - if attacker.has_boost(Boost::Penetration) {
+            5.
+        } else {
+            0.
+        };
     let effective_mr = magic_resist - unit.name.magic_pen();
 
     let mitigate = |dmg, def| dmg * (100. / (100. + def));
@@ -88,24 +99,32 @@ fn calculate_damage(
     damage *= match unit.name {
         UnitName::Warrior if attacker.has_boost(Boost::Warrior) => 1.5,
         UnitName::Lancer if attacker.has_boost(Boost::Lancer) => 1.6,
-        UnitName::Archer if attacker.has_boost(Boost::Armor) => 1.3,
+        UnitName::Archer if attacker.has_boost(Boost::ArmorGain) => 1.3,
         UnitName::Priest if attacker.has_boost(Boost::Meditation) => 1.7,
         _ => 1.,
     };
 
-    damage *= if defender.has_boost(Boost::Armor) {
+    damage *= if defender.has_boost(Boost::ArmorGain) {
         0.7
     } else {
         1.0
     };
 
     if unit.on_building.is_some() && attacker.has_boost(Boost::BuildingsDefense) {
-        damage *= 2.;
+        damage *= 2.0;
     }
 
     damage = damage.max(5.);
 
-    if is_building && defender.has_boost(Boost::BuildingsBlock) {
+    if is_building {
+        if attacker.has_boost(Boost::Siege) {
+            damage *= 1.5;
+        }
+
+        if defender.has_boost(Boost::BuildingsBlock) {
+            damage = 0.;
+        }
+    } else if !unit.name.is_melee() && defender.has_boost(Boost::BlockRange) {
         damage = 0.;
     }
 

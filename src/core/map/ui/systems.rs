@@ -127,7 +127,12 @@ pub fn draw_ui(
                                 position_type: PositionType::Absolute,
                                 ..default()
                             },
-                            add_text("0%", "bold", 20., &assets, &window),
+                            TextLayout::new_with_justify(if side == Side::Left {
+                                Justify::Left
+                            } else {
+                                Justify::Right
+                            }),
+                            add_text("0%", "bold", 12., &assets, &window),
                             TextAdvanceBannerCmp,
                             GlobalZIndex(2), // On top of other color banner
                         )],
@@ -282,10 +287,10 @@ pub fn draw_ui(
                             // Spawn hover box
                             parent.spawn((
                                 Node {
-                                    top: Val::Percent(-40.),
+                                    top: Val::Percent(-140.),
                                     left: Val::Percent(80.),
                                     width: Val::Percent(600.),
-                                    height: Val::Percent(550.),
+                                    height: Val::Percent(650.),
                                     position_type: PositionType::Absolute,
                                     flex_direction: FlexDirection::Column,
                                     padding: UiRect::all(Val::Percent(70.)),
@@ -331,33 +336,46 @@ pub fn draw_ui(
                                     .with_children(|parent| {
                                         let attributes = [
                                             ("Health", unit.health().to_string()),
-                                            (if unit.attack_damage() > 0. {"Attack damage"} else {"Healing"}, unit.attack_damage().abs().to_string()),
+                                            (if unit.attack_damage() >= 0. {"Attack damage"} else {"Healing"}, unit.attack_damage().abs().to_string()),
                                             ("Magic damage", unit.magic_damage().to_string()),
-                                            (if unit.attack_damage() > 0. {"Attack speed"} else {"Healing speed"}, format!("{:.1}", 10. / unit.frames(if unit.attack_damage() > 0. {Action::Attack(Entity::PLACEHOLDER)} else {Action::Heal(Entity::PLACEHOLDER)}) as f32)),
+                                            (if unit.attack_damage() >= 0. {"Attack speed"} else {"Healing speed"}, format!("{:.1}", 10. / unit.frames(if unit.attack_damage() > 0. {Action::Attack(Entity::PLACEHOLDER)} else {Action::Heal(Entity::PLACEHOLDER)}) as f32)),
                                             ("Armor", unit.armor().to_string()),
                                             ("Magic resist", unit.magic_resist().to_string()),
                                             ("Armor penetration", unit.armor_pen().to_string()),
                                             ("Magic penetration", unit.magic_pen().to_string()),
-                                            ("Speed", unit.speed().to_string()),
-                                            ("Range", unit.range().to_string()),
-                                            ("Spawn time", format!("{}s", unit.spawn_duration() / 1000)),
+                                            ("Movement speed", unit.speed().to_string()),
+                                            ("Attack range", unit.range().to_string()),
+                                            ("Spawn duration", format!("{:.1}s", unit.spawn_duration() as f32 / 1000.)),
                                         ];
 
                                         for (k, v) in attributes.iter() {
-                                            // Skip default values
                                             parent.spawn((
                                                 Node {
+                                                    width: Val::Percent(100.),
                                                     margin: UiRect::ZERO.with_bottom(Val::Percent(1.)),
                                                     ..default()
                                                 },
-                                                TextColor(Color::BLACK),
-                                                add_text(
-                                                    format!("{k}: {}", v),
-                                                    "bold",
-                                                    8.,
-                                                    &assets,
-                                                    &window,
-                                                ),
+                                                children![
+                                                    (
+                                                        Node {
+                                                            width: Val::Percent(5.),
+                                                            aspect_ratio: Some(1.0),
+                                                            margin: UiRect::ZERO.with_right(Val::Percent(2.)),
+                                                            ..default()
+                                                        },
+                                                        ImageNode::new(assets.image(k.to_lowercase())),
+                                                    ),
+                                                    (
+                                                        TextColor(Color::BLACK),
+                                                        add_text(
+                                                            format!("{k}: {v}"),
+                                                            "bold",
+                                                            8.,
+                                                            &assets,
+                                                            &window,
+                                                        ),
+                                                    )
+                                                ],
                                             ));
                                         }
                                     });
@@ -664,14 +682,17 @@ pub fn update_ui(
     assets: Local<WorldAssets>,
 ) {
     let (mut me, mut enemy) = (50., 50.); // Start with prior
+    let (mut power_me, mut power_enemy) = (0, 0);
     let mut counts = HashMap::new();
     for (t, unit) in unit_q.iter() {
         let mut x = t.translation.x;
 
         let (side, acc) = if unit.color == players.me.color {
             *counts.entry(unit.name).or_insert(0) += 1;
+            power_me += unit.name.spawn_duration();
             (&players.me.side, &mut me)
         } else {
+            power_enemy += unit.name.spawn_duration();
             (&players.enemy.side, &mut enemy)
         };
 
@@ -693,10 +714,10 @@ pub fn update_ui(
     let enemy_score = 1. - me_score;
 
     for (entity, mut node, banner) in &mut advance_q {
-        let n = if banner.0 == players.me.side {
-            me_score
+        let (n, power) = if banner.0 == players.me.side {
+            (me_score, power_me)
         } else {
-            enemy_score
+            (enemy_score, power_enemy)
         };
 
         node.width = Val::Percent(90. * n);
@@ -704,7 +725,7 @@ pub fn update_ui(
         if let Ok(children) = children_q.get(entity) {
             for &child in children {
                 if let Ok(mut text) = text_q.get_mut(child) {
-                    text.0 = format!("{:.0}%", 100. * n);
+                    text.0 = format!("{:.0}%\n{:.1}k", 100. * n, power as f32 / 1000.);
                 }
             }
         }
