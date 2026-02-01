@@ -131,6 +131,7 @@ impl FromWorld for WorldAssets {
             ("boost", assets.load("images/boosts/boost.png")),
             ("selected boost", assets.load("images/boosts/selected boost.png")),
             ("active boost", assets.load("images/boosts/active boost.png")),
+            ("enemy boost", assets.load("images/boosts/enemy boost.png")),
         ]);
 
         for boost in Boost::iter() {

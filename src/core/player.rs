@@ -8,8 +8,9 @@ use serde::{Deserialize, Serialize};
 use std::collections::VecDeque;
 use std::time::Duration;
 use strum::IntoEnumIterator;
+use strum_macros::EnumIter;
 
-#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(EnumIter, Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 pub enum Side {
     Left,
     Right,
@@ -145,6 +146,12 @@ impl Player {
 
     pub fn has_boost(&self, boost: Boost) -> bool {
         self.boosts.iter().any(|b| b.name == boost && b.active)
+    }
+}
+
+impl PartialEq<Player> for &Player {
+    fn eq(&self, other: &Player) -> bool {
+        self.color == other.color
     }
 }
 

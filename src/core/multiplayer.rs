@@ -52,11 +52,13 @@ pub fn server_send_status(
     building_q: Query<(Entity, &Transform, &Building)>,
     arrow_q: Query<(Entity, &Transform, &Sprite, &Arrow)>,
     settings: Res<Settings>,
+    players: Res<Players>,
     mut server_send_message: MessageWriter<ServerSendMsg>,
 ) {
     server_send_message.write(ServerSendMsg {
         message: ServerMessage::Status {
             speed: settings.speed,
+            boosts: players.me.boosts.clone(),
             population: Population {
                 units: unit_q
                     .iter()

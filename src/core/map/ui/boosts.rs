@@ -1,7 +1,7 @@
 use crate::core::assets::WorldAssets;
 use crate::core::audio::PlayAudioMsg;
-use crate::core::boosts::{Boost, CardCmp};
-use crate::core::constants::{BUTTON_TEXT_SIZE, MAX_BOOSTS};
+use crate::core::boosts::{AfterBoostCount, Boost, CardCmp};
+use crate::core::constants::BUTTON_TEXT_SIZE;
 use crate::core::map::systems::MapCmp;
 use crate::core::map::ui::systems::UiCmp;
 use crate::core::map::utils::UiScaleLens;
@@ -24,23 +24,11 @@ use strum::IntoEnumIterator;
 pub fn setup_boost_selection(
     mut commands: Commands,
     building_q: Query<&Building>,
-    settings: Res<Settings>,
     players: Res<Players>,
     mut play_audio_ev: MessageWriter<PlayAudioMsg>,
-    mut next_game_state: ResMut<NextState<GameState>>,
     assets: Local<WorldAssets>,
     window: Single<&Window>,
 ) {
-    // Skip boost selection if already at max. number of boosts
-    if players.me.boosts.len() == MAX_BOOSTS {
-        if settings.game_mode == GameMode::SinglePlayer {
-            next_game_state.set(GameState::Playing);
-        } else {
-            next_game_state.set(GameState::AfterBoostSelection);
-        }
-        return;
-    }
-
     play_audio_ev.write(PlayAudioMsg::new("message"));
 
     // The possible boosts to select are those that aren't drained nor in the current selected list
@@ -135,6 +123,7 @@ pub fn setup_boost_selection(
                             trigger: On<Pointer<Click>>,
                             settings: Res<Settings>,
                             mut players: ResMut<Players>,
+                            mut boost_count: ResMut<AfterBoostCount>,
                             mut play_audio_msg: MessageWriter<PlayAudioMsg>,
                             mut next_game_state: ResMut<NextState<GameState>>| {
                             if trigger.event.button == PointerButton::Primary {
@@ -142,7 +131,8 @@ pub fn setup_boost_selection(
 
                                 players.me.boosts.push(SelectedBoost::new(boost));
 
-                                if settings.game_mode == GameMode::SinglePlayer {
+                                if settings.game_mode == GameMode::SinglePlayer || **boost_count == 1 {
+                                    **boost_count = 0;
                                     next_game_state.set(GameState::Playing);
                                 } else {
                                     next_game_state.set(GameState::AfterBoostSelection);

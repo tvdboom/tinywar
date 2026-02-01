@@ -5,7 +5,7 @@ use crate::core::constants::{MAX_BOOSTS, MAX_QUEUE_LENGTH};
 use crate::core::map::systems::MapCmp;
 use crate::core::mechanics::queue::QueueUnitMsg;
 use crate::core::menu::utils::add_text;
-use crate::core::player::{Players, SelectedBoost, Side};
+use crate::core::player::{Players, Side};
 use crate::core::settings::{PlayerColor, Settings};
 use crate::core::states::GameState;
 use crate::core::units::units::{Action, Unit, UnitName};
@@ -28,8 +28,20 @@ pub struct TextAdvanceBannerCmp;
 #[derive(Component)]
 pub struct DirectionCmp;
 
-#[derive(Component, Deref)]
-pub struct BoostBoxCmp(pub usize);
+#[derive(Component)]
+pub struct BoostBoxCmp {
+    pub n: usize,
+    pub color: PlayerColor,
+}
+
+impl BoostBoxCmp {
+    pub fn new(n: usize, color: PlayerColor) -> Self {
+        BoostBoxCmp {
+            n,
+            color,
+        }
+    }
+}
 
 #[derive(Component)]
 pub struct BoostBoxImageCmp;
@@ -151,6 +163,139 @@ pub fn draw_ui(
             spawn(3 + right * 7, Val::Percent(45.), Some(Side::Right));
             spawn(5 + right * 7, Val::Auto, None);
             spawn(6 + right * 7, Val::Auto, None);
+        });
+
+    // Draw boosts
+    commands
+        .spawn((
+            Node {
+                top: Val::Percent(12.),
+                right: Val::Percent(20.),
+                width: Val::Percent(60.),
+                height: Val::Percent(13.),
+                position_type: PositionType::Absolute,
+                ..default()
+            },
+            Pickable::IGNORE,
+            UiCmp,
+            MapCmp,
+        ))
+        .with_children(|parent| {
+            for side in Side::iter() {
+                let player = players.get_by_side(side);
+                for i in 0..MAX_BOOSTS {
+                    parent
+                        .spawn((
+                            Node {
+                                width: Val::Percent(10.),
+                                height: Val::Percent(100.),
+                                align_items: AlignItems::Center,
+                                justify_items: JustifyItems::Center,
+                                margin: UiRect::horizontal(Val::Percent(1.)).with_left(if side == Side::Right && i == 0 { Val::Percent(6.) } else { Val::Percent(1.) }),
+                                ..default()
+                            },
+                            ImageNode::new(assets.image("selected boost")),
+                            GlobalZIndex(1),
+                            Visibility::Hidden,
+                            BoostBoxCmp::new(if player.side == Side::Left { i } else { MAX_BOOSTS - 1 - i }, player.color),
+                            children![
+                                (
+                                    Node {
+                                        top: Val::Percent(28.5),
+                                        left: Val::Percent(6.),
+                                        height: Val::Percent(57.5),
+                                        width: Val::Percent(87.),
+                                        position_type: PositionType::Absolute,
+                                        ..default()
+                                    },
+                                    ImageNode::new(assets.image("longbow")),
+                                    GlobalZIndex(0),
+                                    BoostBoxImageCmp,
+                                    children![(
+                                        Node {
+                                            bottom: Val::Percent(2.),
+                                            right: Val::Percent(9.),
+                                            position_type: PositionType::Absolute,
+                                            ..default()
+                                        },
+                                        BoostBoxTimerCmp,
+                                        add_text("", "bold", 12., &assets, &window,),
+                                    )],
+                                ),
+                                (
+                                    Node {
+                                        top: Val::Percent(5.),
+                                        right: Val::Percent(-240.),
+                                        width: Val::Percent(270.),
+                                        height: Val::Percent(120.),
+                                        position_type: PositionType::Absolute,
+                                        padding: UiRect::horizontal(Val::Percent(40.))
+                                            .with_top(Val::Percent(20.)),
+                                        ..default()
+                                    },
+                                    ImageNode::new(assets.image("banner")),
+                                    Pickable::IGNORE,
+                                    GlobalZIndex(2),
+                                    Visibility::Hidden,
+                                    HoverBoxBoostCmp,
+                                    children![(
+                                        TextColor(Color::BLACK),
+                                        add_text("", "bold", 10., &assets, &window),
+                                        HoverBoxBoostLabelCmp,
+                                    )],
+                                )
+                            ],
+                        ))
+                        .observe(cursor::<Over>(SystemCursorIcon::Pointer))
+                        .observe(cursor::<Out>(SystemCursorIcon::Default))
+                        .observe(
+                            |event: On<Pointer<Over>>,
+                             mut box_q: Query<&mut Visibility, With<HoverBoxBoostCmp>>,
+                             children_q: Query<&Children>| {
+                                for child in children_q.iter_descendants(event.entity) {
+                                    if let Ok(mut v) = box_q.get_mut(child) {
+                                        *v = Visibility::Inherited;
+                                    }
+                                }
+                            },
+                        )
+                        .observe(
+                            |event: On<Pointer<Out>>,
+                             mut box_q: Query<&mut Visibility, With<HoverBoxBoostCmp>>,
+                             children_q: Query<&Children>| {
+                                for child in children_q.iter_descendants(event.entity) {
+                                    if let Ok(mut v) = box_q.get_mut(child) {
+                                        *v = Visibility::Hidden;
+                                    }
+                                }
+                            },
+                        )
+                        .observe(
+                            |event: On<Pointer<Click>>,
+                             box_q: Query<&BoostBoxCmp>,
+                             mut players: ResMut<Players>,
+                             game_state: Res<State<GameState>>,
+                             mut play_audio_msg: MessageWriter<PlayAudioMsg>,
+                             mut activate_boost_msg: MessageWriter<ActivateBoostMsg>| {
+                                if event.button == PointerButton::Primary && *game_state.get() == GameState::Playing {
+                                    if let Ok(bbox) = box_q.get(event.entity) {
+                                        let color = players.me.color;
+                                            if color == bbox.color {
+                                                if let Some(boost) = players.me.boosts.get_mut(bbox.n) {
+                                                if !boost.active {
+                                                    boost.active = true;
+                                                    activate_boost_msg.write(ActivateBoostMsg::new(color, boost.name));
+                                                }
+                                            }
+                                        }
+                                    }
+                                } else {
+                                    play_audio_msg.write(PlayAudioMsg::new("error"));
+                                }
+                            },
+                        );
+                }
+            }
         });
 
     // Draw direction
@@ -414,135 +559,6 @@ pub fn draw_ui(
                 });
         });
 
-    // Draw boosts
-    commands
-        .spawn((
-            Node {
-                top: Val::Percent(10.),
-                right: Val::Percent(1.),
-                width: Val::Percent(8.),
-                height: Val::Percent(90.),
-                position_type: PositionType::Absolute,
-                flex_direction: FlexDirection::Column,
-                ..default()
-            },
-            Pickable::IGNORE,
-            UiCmp,
-            MapCmp,
-        ))
-        .with_children(|parent| {
-            for i in 0..MAX_BOOSTS {
-                parent
-                    .spawn((
-                        Node {
-                            display: Display::None,
-                            width: Val::Percent(100.),
-                            height: Val::Percent(20.),
-                            align_items: AlignItems::Center,
-                            justify_items: JustifyItems::Center,
-                            margin: UiRect::ZERO.with_bottom(Val::Percent(5.)),
-                            ..default()
-                        },
-                        ImageNode::new(assets.image("selected boost")),
-                        GlobalZIndex(1),
-                        BoostBoxCmp(i),
-                        children![
-                            (
-                                Node {
-                                    top: Val::Percent(28.5),
-                                    left: Val::Percent(6.),
-                                    height: Val::Percent(57.5),
-                                    width: Val::Percent(87.),
-                                    position_type: PositionType::Absolute,
-                                    ..default()
-                                },
-                                ImageNode::new(assets.image("longbow")),
-                                GlobalZIndex(0),
-                                BoostBoxImageCmp,
-                                children![(
-                                    Node {
-                                        bottom: Val::Percent(2.),
-                                        right: Val::Percent(9.),
-                                        position_type: PositionType::Absolute,
-                                        ..default()
-                                    },
-                                    BoostBoxTimerCmp,
-                                    add_text("", "bold", 14., &assets, &window,),
-                                )],
-                            ),
-                            (
-                                Node {
-                                    top: Val::Percent(10.),
-                                    left: Val::Percent(-235.),
-                                    width: Val::Percent(250.),
-                                    height: Val::Percent(90.),
-                                    position_type: PositionType::Absolute,
-                                    padding: UiRect::horizontal(Val::Percent(40.))
-                                        .with_top(Val::Percent(20.)),
-                                    ..default()
-                                },
-                                ImageNode::new(assets.image("banner")),
-                                Pickable::IGNORE,
-                                GlobalZIndex(2),
-                                Visibility::Hidden,
-                                HoverBoxBoostCmp,
-                                children![(
-                                    TextColor(Color::BLACK),
-                                    add_text("", "bold", 10., &assets, &window),
-                                    HoverBoxBoostLabelCmp,
-                                )],
-                            )
-                        ],
-                    ))
-                    .observe(cursor::<Over>(SystemCursorIcon::Pointer))
-                    .observe(cursor::<Out>(SystemCursorIcon::Default))
-                    .observe(
-                        |event: On<Pointer<Over>>,
-                         mut box_q: Query<&mut Visibility, With<HoverBoxBoostCmp>>,
-                         children_q: Query<&Children>| {
-                            for child in children_q.iter_descendants(event.entity) {
-                                if let Ok(mut v) = box_q.get_mut(child) {
-                                    *v = Visibility::Inherited;
-                                }
-                            }
-                        },
-                    )
-                    .observe(
-                        |event: On<Pointer<Out>>,
-                         mut box_q: Query<&mut Visibility, With<HoverBoxBoostCmp>>,
-                         children_q: Query<&Children>| {
-                            for child in children_q.iter_descendants(event.entity) {
-                                if let Ok(mut v) = box_q.get_mut(child) {
-                                    *v = Visibility::Hidden;
-                                }
-                            }
-                        },
-                    )
-                    .observe(
-                        |event: On<Pointer<Click>>,
-                         box_q: Query<&BoostBoxCmp>,
-                         mut players: ResMut<Players>,
-                         game_state: Res<State<GameState>>,
-                         mut play_audio_msg: MessageWriter<PlayAudioMsg>,
-                         mut activate_boost_msg: MessageWriter<ActivateBoostMsg>| {
-                            if event.button == PointerButton::Primary && *game_state.get() == GameState::Playing {
-                                if let Ok(bbox) = box_q.get(event.entity) {
-                                    let color = players.me.color;
-                                    if let Some(boost) = players.me.boosts.get_mut(**bbox) {
-                                        if !boost.active {
-                                            boost.active = true;
-                                            activate_boost_msg.write(ActivateBoostMsg::new(color, boost.name));
-                                        }
-                                    }
-                                }
-                            } else {
-                                play_audio_msg.write(PlayAudioMsg::new("error"));
-                            }
-                        },
-                    );
-            }
-        });
-
     // Draw queue
     let texture = assets.texture("swords1");
     commands
@@ -744,7 +760,7 @@ pub fn update_ui(
 
 /// Updates the boosts, queue and speed indicator
 pub fn update_ui2(
-    mut boost_q: Query<(Entity, &mut Node, &mut ImageNode, &BoostBoxCmp)>,
+    mut boost_q: Query<(Entity, &mut Visibility, &mut ImageNode, &BoostBoxCmp)>,
     mut image_q: Query<
         &mut ImageNode,
         (With<BoostBoxImageCmp>, Without<BoostBoxCmp>, Without<QueueButtonCmp>),
@@ -756,7 +772,10 @@ pub fn update_ui2(
         (Entity, &mut ImageNode, &QueueButtonCmp),
         (Without<BoostBoxCmp>, Without<BoostBoxImageCmp>),
     >,
-    mut progress_wrapper_q: Query<(Entity, &mut Visibility), With<QueueProgressWrapperCmp>>,
+    mut progress_wrapper_q: Query<
+        (Entity, &mut Visibility),
+        (With<QueueProgressWrapperCmp>, Without<BoostBoxCmp>),
+    >,
     mut progress_inner_q: Query<&mut Node, (Without<BoostBoxCmp>, Without<SwordQueueCmp>)>,
     mut speed_q: Query<
         &mut Text,
@@ -769,12 +788,22 @@ pub fn update_ui2(
     assets: Local<WorldAssets>,
 ) {
     // Update the boosts
-    let boosts: Vec<&SelectedBoost> = players.me.boosts.iter().rev().collect();
-    for (box_e, mut node, mut image, bbox) in &mut boost_q {
-        // Update the nth box, which corresponds to the len(boosts) - n - 1 boost (since rev)
-        let idx = players.me.boosts.len().checked_sub(**bbox + 1);
-        node.display = if let Some(boost) = idx.and_then(|i| boosts.get(i)) {
-            image.image = assets.image(if boost.active {
+    for (box_e, mut box_v, mut image, bbox) in &mut boost_q {
+        let player = players.get_by_color(bbox.color);
+
+        // For enemy, only show active boosts (no gaps)
+        let boost = if player != players.me {
+            player.boosts.iter()
+                .filter(|b| b.active)
+                .nth(bbox.n)
+        } else {
+            player.boosts.get(bbox.n)
+        };
+
+        *box_v = if let Some(boost) = boost {
+            image.image = assets.image(if player != players.me {
+                "enemy boost"
+            } else if boost.active {
                 "active boost"
             } else {
                 "selected boost"
@@ -798,9 +827,9 @@ pub fn update_ui2(
                 }
             }
 
-            Display::Flex
+            Visibility::Inherited
         } else {
-            Display::None
+            Visibility::Hidden
         }
     }
 

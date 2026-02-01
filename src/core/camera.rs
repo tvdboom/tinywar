@@ -93,13 +93,15 @@ pub fn move_camera(
 
     // Clamp camera position within bounds
     let size = Map::MAP_SIZE.as_vec2() * Map::TILE_SIZE as f32;
+    let map_center = Map::POSITION.truncate();
+
     position = position.lerp(
         clamp_to_rect(
             position,
             view_size,
             Rect {
-                min: Vec2::new(-size.x * 0.5, -size.y * 0.5) * MAX_MAP_OFFSET,
-                max: Vec2::new(size.x * 0.5, size.y * 0.5) * MAX_MAP_OFFSET,
+                min: map_center + Vec2::new(-size.x * 0.5, -size.y * 0.5) * MAX_MAP_OFFSET,
+                max: map_center + Vec2::new(size.x * 0.5, size.y * 0.5) * MAX_MAP_OFFSET,
             },
         ),
         LERP_FACTOR,

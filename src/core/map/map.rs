@@ -1,3 +1,4 @@
+use crate::core::constants::MAP_Z;
 use bevy::platform::collections::HashMap;
 use bevy::prelude::*;
 use bevy_ecs_tiled::prelude::TilePos;
@@ -56,6 +57,7 @@ impl Default for Map {
 }
 
 impl Map {
+    pub const POSITION: Vec3 = Vec3::new(0., -300., MAP_Z);
     pub const TILE_SIZE: u32 = 64;
     pub const MAP_SIZE: UVec2 = UVec2::new(30, 16);
 
@@ -150,15 +152,26 @@ impl Map {
     }
 
     pub fn tile_to_world(tile: TilePos) -> Vec2 {
+        let map_origin = Vec2::new(
+            Self::POSITION.x + Self::MAP_VIEW.min.x,
+            Self::POSITION.y + Self::MAP_VIEW.max.y,
+        );
+
         Vec2::new(
-            Map::MAP_VIEW.min.x + Self::TILE_SIZE as f32 * (tile.x as f32 + 0.5),
-            Map::MAP_VIEW.max.y - Self::TILE_SIZE as f32 * (tile.y as f32 + 0.5),
+            map_origin.x + Self::TILE_SIZE as f32 * (tile.x as f32 + 0.5),
+            map_origin.y - Self::TILE_SIZE as f32 * (tile.y as f32 + 0.5),
         )
     }
 
     pub fn world_to_tile(pos: &Vec3) -> TilePos {
-        let x = (pos.x - Self::MAP_VIEW.min.x) / Self::TILE_SIZE as f32;
-        let y = (Self::MAP_VIEW.max.y - pos.y) / Self::TILE_SIZE as f32;
+        let map_origin = Vec2::new(
+            Self::POSITION.x + Self::MAP_VIEW.min.x,
+            Self::POSITION.y + Self::MAP_VIEW.max.y,
+        );
+
+        let x = (pos.x - map_origin.x) / Self::TILE_SIZE as f32;
+        let y = (map_origin.y - pos.y) / Self::TILE_SIZE as f32;
+
         TilePos::new(x as u32, y as u32)
     }
 }

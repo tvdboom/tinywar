@@ -80,6 +80,10 @@ fn calculate_damage(
         attack_damage = 0.;
     }
 
+    if attacker.has_boost(Boost::MagicPower) {
+        magic_damage *= 2.;
+    }
+
     let effective_armor = armor
         - unit.name.armor_pen()
         - if attacker.has_boost(Boost::Penetration) {

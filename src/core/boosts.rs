@@ -1,17 +1,17 @@
 use crate::core::audio::PlayAudioMsg;
+use crate::core::constants::MAX_BOOSTS;
 use crate::core::map::map::Map;
 use crate::core::mechanics::spawn::{DespawnMsg, SpawnBuildingMsg, SpawnUnitMsg};
 use crate::core::menu::systems::Host;
 use crate::core::network::{ClientMessage, ClientSendMsg, ServerMessage, ServerSendMsg};
 use crate::core::player::{Players, Side};
-use crate::core::settings::{PlayerColor, Settings};
+use crate::core::settings::{GameMode, PlayerColor, Settings};
 use crate::core::states::GameState;
 use crate::core::units::buildings::{Building, BuildingName};
 use crate::core::units::units::{Unit, UnitName};
 use crate::utils::scale_duration;
 use bevy::prelude::*;
 use bevy_ecs_tiled::prelude::TilePos;
-use bevy_renet::renet::RenetServer;
 use rand::prelude::IteratorRandom;
 use rand::rng;
 use serde::{Deserialize, Serialize};
@@ -50,10 +50,12 @@ pub enum Boost {
     Castle,
     Clone,
     DoubleQueue,
+    Frozen,
     InstantHealing,
     InstantArmy,
     Lancer,
     Longbow,
+    MagicPower,
     MagicSwap,
     Meditation,
     NoCollision,
@@ -79,10 +81,12 @@ impl Boost {
             Boost::Castle => "Upgrade your base to a castle.",
             Boost::Clone => "Clones 8 random units of yours (in position).",
             Boost::DoubleQueue => "Two units are queued at the same time.",
+            Boost::Frozen => "All enemy units who aren't attacking stop their movement.",
             Boost::InstantHealing => "Instantly heal all your units to their maximum health.",
             Boost::InstantArmy => "Immediately spawn 6 random units in the base.",
             Boost::Lancer => "Increase your lancer's damage by 60%.",
             Boost::Longbow => "Increase the range of your archers by 50%.",
+            Boost::MagicPower => "Increase all your unit's magic damage by 100%.",
             Boost::MagicSwap => "All your unit's attack damage become magic damage.",
             Boost::Meditation => "Your priest's healing is 70% stronger.",
             Boost::NoCollision => "Your units don't collide with each other.",
@@ -90,7 +94,7 @@ impl Boost {
             Boost::Repair => "Instantly repair all your buildings to their maximum health.",
             Boost::Respawn => "Respawn all dead units on buildings.",
             Boost::Run => "Increase the speed of all your units by 100%.",
-            Boost::Siege => "Increase the damage to buildings by 50%.",
+            Boost::Siege => "Increase all damage to buildings by 50%.",
             Boost::SpawnTime => "Reduce all spawning times by 20%.",
             Boost::Tower => "Spawn a defense tower near the base.",
             Boost::Warrior => "Increase your warrior's damage by 50%.",
@@ -113,15 +117,17 @@ impl Boost {
             Boost::BuildingsBlock => 10,
             Boost::BuildingsDefense => 25,
             Boost::DoubleQueue => 20,
+            Boost::Frozen => 5,
             Boost::Lancer => 40,
             Boost::Longbow => 40,
+            Boost::MagicPower => 15,
             Boost::MagicSwap => 40,
             Boost::Meditation => 40,
             Boost::NoCollision => 20,
             Boost::Penetration => 30,
             Boost::Run => 15,
             Boost::Siege => 10,
-            Boost::SpawnTime => 90,
+            Boost::SpawnTime => 50,
             Boost::Warrior => 40,
             _ => 0,
         }
@@ -130,14 +136,25 @@ impl Boost {
 
 pub fn check_boost_timer(
     mut next_game_state: ResMut<NextState<GameState>>,
-    mut game_settings: ResMut<Settings>,
+    mut settings: ResMut<Settings>,
+    players: Res<Players>,
     time: Res<Time>,
 ) {
-    let time = scale_duration(time.delta(), game_settings.speed);
-    game_settings.boost_timer.tick(time);
+    let time = scale_duration(time.delta(), settings.speed);
+    settings.boost_timer.tick(time);
 
-    if game_settings.boost_timer.is_finished() {
-        next_game_state.set(GameState::BoostSelection);
+    if settings.boost_timer.is_finished() {
+        let me_full = players.me.boosts.len() >= MAX_BOOSTS;
+        let enemy_full = players.enemy.boosts.len() >= MAX_BOOSTS;
+
+        // Skip boost selection if both players have the maximum amount of boosts
+        match settings.game_mode {
+            GameMode::SinglePlayer if me_full => return,
+            GameMode::SinglePlayer => next_game_state.set(GameState::BoostSelection),
+            _ if me_full && enemy_full => return,
+            _ if me_full => next_game_state.set(GameState::AfterBoostSelection),
+            _ => next_game_state.set(GameState::BoostSelection),
+        }
     }
 }
 
@@ -297,14 +314,10 @@ pub fn activate_boost_message(
 }
 
 pub fn after_boost_check(
-    server: Res<RenetServer>,
     mut boost_count: ResMut<AfterBoostCount>,
-    game_state: Res<State<GameState>>,
     mut next_game_state: ResMut<NextState<GameState>>,
 ) {
-    if *game_state.get() == GameState::AfterBoostSelection
-        && **boost_count == server.clients_id().len()
-    {
+    if **boost_count == 1 {
         **boost_count = 0;
         next_game_state.set(GameState::Playing);
     }

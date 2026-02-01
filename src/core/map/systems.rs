@@ -1,7 +1,8 @@
 use crate::core::assets::WorldAssets;
 use crate::core::audio::PlayAudioMsg;
 use crate::core::camera::MainCamera;
-use crate::core::constants::{MAP_Z, MAX_ZOOM};
+use crate::core::constants::MAX_ZOOM;
+use crate::core::map::map::Map;
 use crate::core::map::ui::systems::UiCmp;
 use crate::core::map::utils::UiScaleLens;
 use crate::core::player::Players;
@@ -29,7 +30,7 @@ pub fn draw_map(
     commands.spawn((
         TiledMap(assets.load("map/map.tmx")),
         TilemapAnchor::Center,
-        Transform::from_xyz(0., 0., MAP_Z),
+        Transform::from_translation(Map::POSITION),
         MapCmp,
     ));
 }

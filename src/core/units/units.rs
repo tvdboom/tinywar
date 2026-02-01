@@ -149,8 +149,8 @@ impl UnitName {
 
     pub fn armor(&self) -> f32 {
         match self {
-            UnitName::Warrior => 7.,
-            UnitName::Lancer => 4.,
+            UnitName::Warrior => 5.,
+            UnitName::Lancer => 3.,
             UnitName::Archer => 1.,
             UnitName::Priest => 0.,
         }

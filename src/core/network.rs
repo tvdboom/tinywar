@@ -3,11 +3,12 @@ use std::time::SystemTime;
 
 use crate::core::audio::PlayAudioMsg;
 use crate::core::boosts::{ActivateBoostMsg, AfterBoostCount, Boost};
+use crate::core::constants::MAX_BOOSTS;
 use crate::core::mechanics::explosion::ExplosionMsg;
 use crate::core::mechanics::spawn::SpawnUnitMsg;
 use crate::core::menu::buttons::LobbyTextCmp;
 use crate::core::multiplayer::{EntityMap, Population, UpdatePopulationMsg};
-use crate::core::player::{Player, Players, Side};
+use crate::core::player::{Player, Players, SelectedBoost, Side};
 use crate::core::settings::{GameMode, PlayerColor, Settings};
 use crate::core::states::{AppState, GameState};
 use crate::core::units::units::UnitName;
@@ -67,6 +68,7 @@ pub enum ServerMessage {
     State(GameState),
     Status {
         speed: f32,
+        boosts: Vec<SelectedBoost>,
         population: Population,
     },
     Explosion(Entity),
@@ -231,9 +233,8 @@ pub fn server_receive_message(
                     {
                         next_game_state.set(GameState::Paused);
                     },
-                    GameState::Playing => next_game_state.set(GameState::Playing),
+                    GameState::Playing | GameState::EndGame => next_game_state.set(state),
                     GameState::AfterBoostSelection => **boost_count += 1,
-                    GameState::EndGame => next_game_state.set(GameState::EndGame),
                     _ => (),
                 },
                 ClientMessage::Status(player) => {
@@ -267,6 +268,8 @@ pub fn client_receive_message(
     mut n_players_q: Query<&mut Text, With<LobbyTextCmp>>,
     mut client: ResMut<RenetClient>,
     mut settings: ResMut<Settings>,
+    mut players: Option<ResMut<Players>>,
+    mut boost_count: ResMut<AfterBoostCount>,
     mut next_app_state: ResMut<NextState<AppState>>,
     mut client_send_msg: MessageWriter<ClientSendMsg>,
     mut update_population_msg: MessageWriter<UpdatePopulationMsg>,
@@ -295,6 +298,7 @@ pub fn client_receive_message(
                 settings.enemy_color = enemy_color;
 
                 commands.insert_resource(EntityMap::default());
+                commands.insert_resource(AfterBoostCount::default());
                 commands.insert_resource(Players {
                     me: player,
                     enemy: Player::new(0, enemy_color, Side::Left),
@@ -308,7 +312,28 @@ pub fn client_receive_message(
                 {
                     next_game_state.set(GameState::Paused)
                 },
-                GameState::Playing | GameState::BoostSelection => next_game_state.set(state),
+                GameState::Playing => {
+                    **boost_count = 0;
+                    next_game_state.set(state)
+                },
+                GameState::BoostSelection => {
+                    if let Some(players) = &players {
+                        if players.me.boosts.len() != MAX_BOOSTS {
+                            next_game_state.set(state)
+                        } else {
+                            next_game_state.set(GameState::AfterBoostSelection)
+                        }
+                    }
+                },
+                GameState::AfterBoostSelection => {
+                    **boost_count += 1;
+                    if !matches!(
+                        game_state.get(),
+                        GameState::BoostSelection | GameState::AfterBoostSelection
+                    ) {
+                        next_game_state.set(GameState::BoostSelection);
+                    }
+                },
                 _ => (),
             },
             ServerMessage::Explosion(entity) => {
@@ -326,9 +351,15 @@ pub fn client_receive_message(
         match d {
             ServerMessage::Status {
                 speed,
+                boosts,
                 population,
             } => {
                 settings.speed = speed;
+
+                if let Some(players) = &mut players {
+                    players.enemy.boosts = boosts;
+                }
+
                 update_population_msg.write(UpdatePopulationMsg(population));
             },
             _ => unreachable!(),

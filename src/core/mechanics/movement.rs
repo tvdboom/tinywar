@@ -49,6 +49,7 @@ fn move_unit(
     let mut path = map.path(&unit.path);
 
     let player = players.get_by_color(unit.color);
+    let enemy = players.get_by_side(player.side.opposite());
 
     // Reverse paths for the enemy
     if player.side == Side::Right {
@@ -168,6 +169,9 @@ fn move_unit(
 
     // Units on buildings don't move
     if unit.on_building.is_some() {
+        return;
+    } else if enemy.has_boost(Boost::Frozen) {
+        unit.action = Action::Idle;
         return;
     }
 
