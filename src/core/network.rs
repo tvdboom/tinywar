@@ -233,7 +233,7 @@ pub fn server_receive_message(
                     {
                         next_game_state.set(GameState::Paused);
                     },
-                    GameState::Playing | GameState::EndGame => next_game_state.set(state),
+                    GameState::Playing => next_game_state.set(state),
                     GameState::AfterBoostSelection => **boost_count += 1,
                     _ => (),
                 },
@@ -312,7 +312,7 @@ pub fn client_receive_message(
                 {
                     next_game_state.set(GameState::Paused)
                 },
-                GameState::Playing => {
+                GameState::Playing | GameState::EndGame => {
                     **boost_count = 0;
                     next_game_state.set(state)
                 },

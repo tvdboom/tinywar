@@ -29,10 +29,12 @@ pub fn explosion_message(
     assets: Local<WorldAssets>,
 ) {
     for ExplosionMsg(entity) in explosion_msg.read() {
-        if host.is_some() {
-            let entity = entity_map.get_by_right(entity).unwrap_or(entity);
+        let entity = if host.is_some() {
             server_send_msg.write(ServerSendMsg::new(ServerMessage::Explosion(*entity), None));
-        }
+            entity
+        } else {
+            entity_map.get_by_left(entity).unwrap_or(entity)
+        };
 
         if let Ok((building_t, building)) = building_q.get(*entity) {
             let mut rng = rng();

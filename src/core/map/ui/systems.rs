@@ -793,9 +793,7 @@ pub fn update_ui2(
 
         // For enemy, only show active boosts (no gaps)
         let boost = if player != players.me {
-            player.boosts.iter()
-                .filter(|b| b.active)
-                .nth(bbox.n)
+            player.boosts.iter().filter(|b| b.active).nth(bbox.n)
         } else {
             player.boosts.get(bbox.n)
         };

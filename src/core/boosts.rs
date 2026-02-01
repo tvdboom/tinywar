@@ -286,7 +286,7 @@ pub fn activate_boost_message(
                         ],
                         Side::Right => [
                             Map::tile_to_world(TilePos::new(23, 0)),
-                            Map::tile_to_world(TilePos::new(26, 4)),
+                            Map::tile_to_world(TilePos::new(28, 4)),
                         ],
                     };
 

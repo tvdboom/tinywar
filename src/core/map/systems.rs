@@ -42,11 +42,12 @@ pub fn setup_end_game(
     mut play_audio_msg: MessageWriter<PlayAudioMsg>,
     assets: Local<WorldAssets>,
 ) {
-    let status = if building_q.iter().any(|b| b.color == players.me.color && b.is_base) {
-        "victory"
-    } else {
-        "defeat"
-    };
+    let status =
+        if building_q.iter().any(|b| b.color == players.me.color && b.is_base && b.health > 0.) {
+            "victory"
+        } else {
+            "defeat"
+        };
 
     play_audio_msg.write(PlayAudioMsg::new(status));
 
