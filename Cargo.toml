@@ -2,6 +2,7 @@
 name = "tinywar"
 version = "0.1.0"
 edition = "2021"
+authors = ["Mavs"]
 
 [dependencies]
 bevy = { version = "0.18.0", default-features = false, features = [
@@ -64,9 +65,11 @@ rfd = "0.17.2"
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 bevy_ecs_tiled = { version = "0.11.2", features = ["wasm"] }
-# Used by `rand` and requires feature flag for wasm
+# Used by many dependencies and require feature flag for wasm
 # https://docs.rs/getrandom/latest/getrandom/#webassembly-support
-getrandom = { version = "0.4.0", features = ["wasm_js"] }
+getrandom_v2 = { package = "getrandom", version = "0.2.17", features = ["js"] }
+getrandom_v3 = { package = "getrandom", version = "0.3.4", features = ["wasm_js"] }
+
 
 # Enable a small amount of optimization in the dev profile.
 [profile.dev]
