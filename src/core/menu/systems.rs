@@ -17,6 +17,7 @@ use crate::core::mechanics::spawn::SpawnBuildingMsg;
 use crate::core::menu::buttons::*;
 use crate::core::menu::settings::{spawn_label, SettingsBtn};
 use crate::core::menu::utils::{add_root_node, add_text};
+#[cfg(not(target_arch = "wasm32"))]
 use crate::core::multiplayer::EntityMap;
 use crate::core::player::{Player, Players, Side};
 use crate::core::settings::{GameMode, PlayerColor, Settings};
@@ -417,6 +418,7 @@ pub fn start_new_game_message(
 
         commands.insert_resource(Host);
         commands.insert_resource(AfterBoostCount::default());
+        #[cfg(not(target_arch = "wasm32"))]
         commands.insert_resource(EntityMap::default());
         commands.insert_resource(Players {
             me: Player::new(0, settings.color, Side::Left),

@@ -102,7 +102,7 @@ impl FromWorld for WorldAssets {
             ("attack speed", assets.load("images/icons/attack speed.png")),
             ("healing speed", assets.load("images/icons/healing speed.png")),
             ("healing", assets.load("images/icons/healing.png")),
-            ("attack damage", assets.load("images/icons/attack damage.png")),
+            ("physical damage", assets.load("images/icons/physical damage.png")),
             ("magic damage", assets.load("images/icons/magic damage.png")),
             ("armor", assets.load("images/icons/armor.png")),
             ("magic resist", assets.load("images/icons/magic resist.png")),

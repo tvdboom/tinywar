@@ -3,6 +3,7 @@ use crate::core::boosts::Boost;
 use crate::core::constants::MAX_QUEUE_LENGTH;
 use crate::core::mechanics::spawn::SpawnUnitMsg;
 use crate::core::menu::systems::Host;
+#[cfg(not(target_arch = "wasm32"))]
 use crate::core::network::{ClientMessage, ClientSendMsg};
 use crate::core::player::{Players, QueuedUnit};
 use crate::core::settings::Settings;

@@ -37,9 +37,9 @@ impl UnitName {
                 though they're vulnerable in close combat."
             },
             UnitName::Priest => {
-                "Priests heal damaged units over a range. A priest cannot attack nor heal himself. \
-                These fragile support units are slow-moving and defenseless, but their powerful \
-                healing can turn the tide of battle."
+                "Priests heal damaged units over a range. A priest cannot heal himself. These \
+                fragile support units are slow-moving and defenseless, but their powerful healing \
+                can turn the tide of battle. Priests do not attack."
             },
         }
     }
@@ -132,7 +132,7 @@ impl UnitName {
         }
     }
 
-    pub fn attack_damage(&self) -> f32 {
+    pub fn physical_damage(&self) -> f32 {
         match self {
             UnitName::Warrior => 15.,
             UnitName::Lancer => 15.,

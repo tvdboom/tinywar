@@ -481,9 +481,9 @@ pub fn draw_ui(
                                     .with_children(|parent| {
                                         let attributes = [
                                             ("Health", unit.health().to_string()),
-                                            (if unit.attack_damage() >= 0. {"Attack damage"} else {"Healing"}, unit.attack_damage().abs().to_string()),
+                                            (if unit.physical_damage() >= 0. {"Physical damage"} else {"Healing"}, unit.physical_damage().abs().to_string()),
                                             ("Magic damage", unit.magic_damage().to_string()),
-                                            (if unit.attack_damage() >= 0. {"Attack speed"} else {"Healing speed"}, format!("{:.1}", 10. / unit.frames(if unit.attack_damage() > 0. {Action::Attack(Entity::PLACEHOLDER)} else {Action::Heal(Entity::PLACEHOLDER)}) as f32)),
+                                            (if unit.physical_damage() >= 0. {"Attack speed"} else {"Healing speed"}, format!("{:.1}", 10. / unit.frames(if unit.physical_damage() > 0. {Action::Attack(Entity::PLACEHOLDER)} else {Action::Heal(Entity::PLACEHOLDER)}) as f32)),
                                             ("Armor", unit.armor().to_string()),
                                             ("Magic resist", unit.magic_resist().to_string()),
                                             ("Armor penetration", unit.armor_pen().to_string()),

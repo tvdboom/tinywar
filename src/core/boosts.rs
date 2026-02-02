@@ -3,6 +3,7 @@ use crate::core::constants::MAX_BOOSTS;
 use crate::core::map::map::Map;
 use crate::core::mechanics::spawn::{DespawnMsg, SpawnBuildingMsg, SpawnUnitMsg};
 use crate::core::menu::systems::Host;
+#[cfg(not(target_arch = "wasm32"))]
 use crate::core::network::{ClientMessage, ClientSendMsg, ServerMessage, ServerSendMsg};
 use crate::core::player::{Players, SelectedBoost, Side};
 use crate::core::settings::{GameMode, PlayerColor, Settings};
@@ -45,11 +46,11 @@ pub enum Boost {
     ArmorGain,
     Arrows,
     BlockRange,
-    Boss,
     BuildingsBlock,
     BuildingsDefense,
     Castle,
     Clone,
+    Conversion,
     DoubleQueue,
     Frozen,
     InstantHealing,
@@ -77,11 +78,11 @@ impl Boost {
             Boost::ArmorGain => "Decrease damage to all your units by 30%.",
             Boost::Arrows => "Your archers deal 30% more damage.",
             Boost::BlockRange => "Block all damage on units from enemy ranged units.",
-            Boost::Boss => "Spawn a mighty warrior with increased health and damage.",
             Boost::BuildingsBlock => "Block all damage dealt to your buildings.",
             Boost::BuildingsDefense => "Increase the damage of all units on buildings by 100%.",
             Boost::Castle => "Upgrade your base to a castle.",
             Boost::Clone => "Clones 8 random units of yours (in position).",
+            Boost::Conversion => "Converts 5 random enemy units to your side.",
             Boost::DoubleQueue => "Two units are queued at the same time.",
             Boost::Frozen => "All enemy units who aren't attacking stop their movement.",
             Boost::InstantHealing => "Instantly heal all your units to their maximum health.",
@@ -90,7 +91,7 @@ impl Boost {
             Boost::Lightning => "Reduce all unit's health by half",
             Boost::Longbow => "Increase the range of your archers by 50%.",
             Boost::MagicPower => "Increase all your unit's magic damage by 100%.",
-            Boost::MagicSwap => "All your unit's attack damage become magic damage.",
+            Boost::MagicSwap => "All your unit's physical damage become magic damage.",
             Boost::Meditation => "Your priest's healing is 70% stronger.",
             Boost::NoCollision => "Your units don't collide with each other.",
             Boost::Penetration => "Increase the armor penetration of all your units with 5 points.",
@@ -194,8 +195,8 @@ pub fn activate_boost_message(
     mut spawn_building_msg: MessageWriter<SpawnBuildingMsg>,
     mut despawn_msg: MessageWriter<DespawnMsg>,
     mut activate_boost_msg: MessageReader<ActivateBoostMsg>,
-    mut client_send_msg: MessageWriter<ClientSendMsg>,
-    mut server_send_msg: MessageWriter<ServerSendMsg>,
+    #[cfg(not(target_arch = "wasm32"))] mut client_send_msg: MessageWriter<ClientSendMsg>,
+    #[cfg(not(target_arch = "wasm32"))] mut server_send_msg: MessageWriter<ServerSendMsg>,
     mut play_audio_msg: MessageWriter<PlayAudioMsg>,
 ) {
     for msg in activate_boost_msg.read() {
@@ -203,6 +204,7 @@ pub fn activate_boost_message(
 
         if host.is_none() {
             play_audio_msg.write(PlayAudioMsg::new("horn"));
+            #[cfg(not(target_arch = "wasm32"))]
             client_send_msg.write(ClientSendMsg::new(ClientMessage::ActivateBoost(msg.boost)));
         } else {
             if players.me.color == msg.color {
@@ -211,6 +213,7 @@ pub fn activate_boost_message(
             } else {
                 // Activates enemy boost
                 play_audio_msg.write(PlayAudioMsg::new("warning"));
+                #[cfg(not(target_arch = "wasm32"))]
                 server_send_msg.write(ServerSendMsg::new(ServerMessage::PlayWarning, None));
             }
 
@@ -248,6 +251,15 @@ pub fn activate_boost_message(
                             path: Some(unit.path),
                             entity: None,
                         });
+                    }
+                },
+                Boost::Conversion => {
+                    for (_, mut u) in unit_q
+                        .iter_mut()
+                        .filter(|(_, u)| u.color != player.color)
+                        .choose_multiple(&mut rng, 5)
+                    {
+                        u.color = player.color;
                     }
                 },
                 Boost::InstantHealing => unit_q

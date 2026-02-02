@@ -4,6 +4,7 @@ use crate::core::map::map::Path;
 use crate::core::map::systems::MapCmp;
 use crate::core::map::utils::SpriteFrameLens;
 use crate::core::mechanics::combat::Arrow;
+#[cfg(not(target_arch = "wasm32"))]
 use crate::core::multiplayer::EntityMap;
 use crate::core::player::Players;
 use crate::core::settings::PlayerColor;

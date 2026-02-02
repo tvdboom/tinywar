@@ -19,6 +19,7 @@ mod systems;
 mod units;
 mod utils;
 
+use crate::core::assets::WorldAssets;
 use crate::core::audio::*;
 use crate::core::boosts::*;
 use crate::core::camera::*;
@@ -34,7 +35,6 @@ use crate::core::mechanics::queue::*;
 use crate::core::mechanics::spawn::*;
 use crate::core::menu::buttons::MenuCmp;
 use crate::core::menu::systems::*;
-use crate::core::persistence::run_autosave;
 use crate::core::settings::Settings;
 use crate::core::states::{AppState, GameState};
 use crate::core::systems::*;
@@ -48,10 +48,9 @@ use strum::IntoEnumIterator;
 use {
     crate::core::multiplayer::*,
     crate::core::network::*,
-    crate::core::persistence::{load_game, save_game, LoadGameMsg, SaveGameMsg},
+    crate::core::persistence::{load_game, run_autosave, save_game, LoadGameMsg, SaveGameMsg},
     bevy_renet::renet::{RenetClient, RenetServer},
 };
-use crate::core::assets::WorldAssets;
 
 pub struct GamePlugin;
 

@@ -72,7 +72,7 @@ fn calculate_damage(
     attacker: &Player,
     defender: &Player,
 ) -> f32 {
-    let mut attack_damage = unit.name.attack_damage();
+    let mut attack_damage = unit.name.physical_damage();
     let mut magic_damage = unit.name.magic_damage();
 
     if attacker.has_boost(Boost::MagicSwap) {

@@ -4,13 +4,16 @@ use crate::core::constants::{BUILDING_SCALE, EXPLOSION_Z, FRAME_RATE};
 use crate::core::map::systems::MapCmp;
 use crate::core::map::utils::SpriteFrameLens;
 use crate::core::menu::systems::Host;
-use crate::core::multiplayer::EntityMap;
-use crate::core::network::{ServerMessage, ServerSendMsg};
 use crate::core::units::buildings::Building;
 use bevy::prelude::*;
 use bevy_tweening::{CycleCompletedEvent, Delay, Tween, TweenAnim};
 use rand::{rng, Rng};
 use std::time::Duration;
+#[cfg(not(target_arch = "wasm32"))]
+use {
+    crate::core::multiplayer::EntityMap,
+    crate::core::network::{ServerMessage, ServerSendMsg},
+};
 
 #[derive(Component)]
 pub struct ExplosionCmp;
@@ -22,13 +25,14 @@ pub fn explosion_message(
     mut commands: Commands,
     building_q: Query<(&Transform, &Building)>,
     host: Option<Res<Host>>,
-    entity_map: Res<EntityMap>,
-    mut server_send_msg: MessageWriter<ServerSendMsg>,
+    #[cfg(not(target_arch = "wasm32"))] entity_map: Res<EntityMap>,
+    #[cfg(not(target_arch = "wasm32"))] mut server_send_msg: MessageWriter<ServerSendMsg>,
     mut explosion_msg: MessageReader<ExplosionMsg>,
     mut play_audio_msg: MessageWriter<PlayAudioMsg>,
     assets: Res<WorldAssets>,
 ) {
     for ExplosionMsg(entity) in explosion_msg.read() {
+        #[cfg(not(target_arch = "wasm32"))]
         let entity = if host.is_some() {
             server_send_msg.write(ServerSendMsg::new(ServerMessage::Explosion(*entity), None));
             entity
