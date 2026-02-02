@@ -76,7 +76,7 @@ pub fn spawn_building_message(
     #[cfg(not(target_arch = "wasm32"))] mut entity_map: ResMut<EntityMap>,
     mut spawn_building_msg: MessageReader<SpawnBuildingMsg>,
     mut spawn_unit_msg: MessageWriter<SpawnUnitMsg>,
-    assets: Local<WorldAssets>,
+    assets: Res<WorldAssets>,
 ) {
     for msg in spawn_building_msg.read() {
         let size = msg.building.size();
@@ -147,7 +147,7 @@ pub fn spawn_unit_message(
     players: Res<Players>,
     #[cfg(not(target_arch = "wasm32"))] mut entity_map: ResMut<EntityMap>,
     mut spawn_unit_msg: MessageReader<SpawnUnitMsg>,
-    assets: Local<WorldAssets>,
+    assets: Res<WorldAssets>,
 ) {
     for msg in spawn_unit_msg.read() {
         let action = Action::default();
@@ -229,7 +229,7 @@ pub fn spawn_arrow_message(
     mut commands: Commands,
     #[cfg(not(target_arch = "wasm32"))] mut entity_map: ResMut<EntityMap>,
     mut spawn_arrow_msg: MessageReader<SpawnArrowMsg>,
-    assets: Local<WorldAssets>,
+    assets: Res<WorldAssets>,
 ) {
     for msg in spawn_arrow_msg.read() {
         let id = commands

@@ -69,7 +69,7 @@ impl Default for Settings {
             speed: 1.0,
             boost_timer: Timer::from_seconds(BOOST_TIMER, TimerMode::Repeating),
             audio: AudioState::default(),
-            autosave: true,
+            autosave: false,
         }
     }
 }

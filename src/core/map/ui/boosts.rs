@@ -1,6 +1,6 @@
 use crate::core::assets::WorldAssets;
 use crate::core::audio::PlayAudioMsg;
-use crate::core::boosts::{AfterBoostCount, Boost, CardCmp};
+use crate::core::boosts::{ActivateBoostMsg, AfterBoostCount, Boost, CardCmp};
 use crate::core::constants::BUTTON_TEXT_SIZE;
 use crate::core::map::systems::MapCmp;
 use crate::core::map::ui::systems::UiCmp;
@@ -24,9 +24,10 @@ use strum::IntoEnumIterator;
 pub fn setup_boost_selection(
     mut commands: Commands,
     building_q: Query<&Building>,
+    settings: Res<Settings>,
     players: Res<Players>,
     mut play_audio_ev: MessageWriter<PlayAudioMsg>,
-    assets: Local<WorldAssets>,
+    assets: Res<WorldAssets>,
     window: Single<&Window>,
 ) {
     play_audio_ev.write(PlayAudioMsg::new("message"));
@@ -38,6 +39,19 @@ pub fn setup_boost_selection(
                 && !players.me.boosts.iter().map(|b| b.name).contains(b)
         })
         .choose_multiple(&mut rng(), 3);
+
+    // Select a random boost for the NPC and activate it immediately
+    let enemy_boost = if settings.game_mode == GameMode::SinglePlayer {
+        Boost::iter()
+            .filter(|b| {
+                b.condition(building_q.iter().filter(|b| b.color == players.enemy.color))
+                    && !players.enemy.boosts.iter().map(|b| b.name).contains(b)
+            })
+            .choose(&mut rng())
+            .unwrap()
+    } else {
+        Boost::ArmorGain // Random boost never used
+    };
 
     commands.spawn((add_root_node(false), CardCmp, MapCmp)).with_children(|parent| {
         parent
@@ -124,6 +138,7 @@ pub fn setup_boost_selection(
                             settings: Res<Settings>,
                             mut players: ResMut<Players>,
                             mut boost_count: ResMut<AfterBoostCount>,
+                            mut activate_boost_msg: MessageWriter<ActivateBoostMsg>,
                             mut play_audio_msg: MessageWriter<PlayAudioMsg>,
                             mut next_game_state: ResMut<NextState<GameState>>| {
                             if trigger.event.button == PointerButton::Primary {
@@ -131,7 +146,11 @@ pub fn setup_boost_selection(
 
                                 players.me.boosts.push(SelectedBoost::new(boost));
 
-                                if settings.game_mode == GameMode::SinglePlayer || **boost_count == 1 {
+                                if settings.game_mode == GameMode::SinglePlayer {
+                                    players.enemy.boosts.push(SelectedBoost::new(enemy_boost).active());
+                                    activate_boost_msg.write(ActivateBoostMsg::new(enemy_boost, players.enemy.color));
+                                    next_game_state.set(GameState::Playing);
+                                }  else if **boost_count == 1 {
                                     **boost_count = 0;
                                     next_game_state.set(GameState::Playing);
                                 } else {
@@ -145,7 +164,7 @@ pub fn setup_boost_selection(
 
 pub fn setup_after_boost(
     mut commands: Commands,
-    assets: Local<WorldAssets>,
+    assets: Res<WorldAssets>,
     window: Single<&Window>,
 ) {
     commands.spawn((add_root_node(false), CardCmp, MapCmp)).with_children(|parent| {

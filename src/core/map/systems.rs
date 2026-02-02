@@ -40,7 +40,7 @@ pub fn setup_end_game(
     building_q: Query<&Building>,
     players: Res<Players>,
     mut play_audio_msg: MessageWriter<PlayAudioMsg>,
-    assets: Local<WorldAssets>,
+    assets: Res<WorldAssets>,
 ) {
     let status =
         if building_q.iter().any(|b| b.color == players.me.color && b.is_base && b.health > 0.) {

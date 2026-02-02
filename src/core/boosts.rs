@@ -4,7 +4,7 @@ use crate::core::map::map::Map;
 use crate::core::mechanics::spawn::{DespawnMsg, SpawnBuildingMsg, SpawnUnitMsg};
 use crate::core::menu::systems::Host;
 use crate::core::network::{ClientMessage, ClientSendMsg, ServerMessage, ServerSendMsg};
-use crate::core::player::{Players, Side};
+use crate::core::player::{Players, SelectedBoost, Side};
 use crate::core::settings::{GameMode, PlayerColor, Settings};
 use crate::core::states::GameState;
 use crate::core::units::buildings::{Building, BuildingName};
@@ -12,6 +12,7 @@ use crate::core::units::units::{Unit, UnitName};
 use crate::utils::scale_duration;
 use bevy::prelude::*;
 use bevy_ecs_tiled::prelude::TilePos;
+use itertools::Itertools;
 use rand::prelude::IteratorRandom;
 use rand::rng;
 use serde::{Deserialize, Serialize};
@@ -23,15 +24,15 @@ pub struct CardCmp;
 
 #[derive(Message)]
 pub struct ActivateBoostMsg {
-    pub color: PlayerColor,
     pub boost: Boost,
+    pub color: PlayerColor,
 }
 
 impl ActivateBoostMsg {
-    pub fn new(color: PlayerColor, boost: Boost) -> Self {
+    pub fn new(boost: Boost, color: PlayerColor) -> Self {
         Self {
-            color,
             boost,
+            color,
         }
     }
 }
@@ -54,6 +55,7 @@ pub enum Boost {
     InstantHealing,
     InstantArmy,
     Lancer,
+    Lightning,
     Longbow,
     MagicPower,
     MagicSwap,
@@ -85,6 +87,7 @@ impl Boost {
             Boost::InstantHealing => "Instantly heal all your units to their maximum health.",
             Boost::InstantArmy => "Immediately spawn 6 random units in the base.",
             Boost::Lancer => "Increase your lancer's damage by 60%.",
+            Boost::Lightning => "Reduce all unit's health by half",
             Boost::Longbow => "Increase the range of your archers by 50%.",
             Boost::MagicPower => "Increase all your unit's magic damage by 100%.",
             Boost::MagicSwap => "All your unit's attack damage become magic damage.",
@@ -135,9 +138,11 @@ impl Boost {
 }
 
 pub fn check_boost_timer(
+    building_q: Query<&Building>,
+    mut activate_boost_msg: MessageWriter<ActivateBoostMsg>,
     mut next_game_state: ResMut<NextState<GameState>>,
     mut settings: ResMut<Settings>,
-    players: Res<Players>,
+    mut players: ResMut<Players>,
     time: Res<Time>,
 ) {
     let time = scale_duration(time.delta(), settings.speed);
@@ -147,25 +152,37 @@ pub fn check_boost_timer(
         let me_full = players.me.boosts.len() >= MAX_BOOSTS;
         let enemy_full = players.enemy.boosts.len() >= MAX_BOOSTS;
 
-        // Skip boost selection if both players have the maximum amount of boosts
         match settings.game_mode {
-            GameMode::SinglePlayer if me_full => return,
-            GameMode::SinglePlayer => next_game_state.set(GameState::BoostSelection),
-            _ if me_full && enemy_full => return,
-            _ if me_full => next_game_state.set(GameState::AfterBoostSelection),
+            _ if me_full && enemy_full => (),
+            GameMode::SinglePlayer if me_full => {
+                let boost = Boost::iter()
+                    .filter(|b| {
+                        b.condition(building_q.iter().filter(|b| b.color == players.enemy.color))
+                            && !players.enemy.boosts.iter().map(|b| b.name).contains(b)
+                    })
+                    .choose(&mut rng())
+                    .unwrap();
+
+                players.enemy.boosts.push(SelectedBoost::new(boost).active());
+                activate_boost_msg.write(ActivateBoostMsg::new(boost, players.enemy.color));
+            },
+            GameMode::Multiplayer if me_full => next_game_state.set(GameState::AfterBoostSelection),
             _ => next_game_state.set(GameState::BoostSelection),
         }
     }
 }
 
 pub fn update_boosts(settings: Res<Settings>, mut players: ResMut<Players>, time: Res<Time>) {
-    players.me.boosts.retain_mut(|boost| {
-        if boost.active {
-            boost.timer.tick(scale_duration(time.delta(), settings.speed));
-            return !boost.timer.just_finished();
-        }
-        true
-    });
+    let me = players.me.color;
+    for player in players.iter_mut().filter(|p| p.color == me || !p.is_human()) {
+        player.boosts.retain_mut(|boost| {
+            if boost.active {
+                boost.timer.tick(scale_duration(time.delta(), settings.speed));
+                return !boost.timer.just_finished();
+            }
+            true
+        });
+    }
 }
 
 pub fn activate_boost_message(
@@ -242,6 +259,7 @@ pub fn activate_boost_message(
                         spawn_unit_msg.write(SpawnUnitMsg::new(player.color, unit));
                     }
                 },
+                Boost::Lightning => unit_q.iter_mut().for_each(|(_, mut u)| u.health *= 0.5),
                 Boost::Repair => building_q
                     .iter_mut()
                     .filter(|(_, _, b)| b.color == player.color)

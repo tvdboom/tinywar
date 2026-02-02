@@ -26,7 +26,7 @@ pub fn explosion_message(
     mut server_send_msg: MessageWriter<ServerSendMsg>,
     mut explosion_msg: MessageReader<ExplosionMsg>,
     mut play_audio_msg: MessageWriter<PlayAudioMsg>,
-    assets: Local<WorldAssets>,
+    assets: Res<WorldAssets>,
 ) {
     for ExplosionMsg(entity) in explosion_msg.read() {
         let entity = if host.is_some() {

@@ -84,7 +84,7 @@ pub fn draw_ui(
     players: Res<Players>,
     settings: Res<Settings>,
     window: Single<&Window>,
-    assets: Local<WorldAssets>,
+    assets: Res<WorldAssets>,
 ) {
     // Draw advance
     let texture = assets.texture("large ribbons");
@@ -284,7 +284,7 @@ pub fn draw_ui(
                                                 if let Some(boost) = players.me.boosts.get_mut(bbox.n) {
                                                 if !boost.active {
                                                     boost.active = true;
-                                                    activate_boost_msg.write(ActivateBoostMsg::new(color, boost.name));
+                                                    activate_boost_msg.write(ActivateBoostMsg::new(boost.name, color));
                                                 }
                                             }
                                         }
@@ -695,7 +695,7 @@ pub fn update_ui(
     mut label_q: Query<(&mut Text, &ShopLabelCmp), Without<TextAdvanceBannerCmp>>,
     children_q: Query<&Children>,
     players: Res<Players>,
-    assets: Local<WorldAssets>,
+    assets: Res<WorldAssets>,
 ) {
     let (mut me, mut enemy) = (50., 50.); // Start with prior
     let (mut power_me, mut power_enemy) = (0, 0);
@@ -785,7 +785,7 @@ pub fn update_ui2(
     settings: Res<Settings>,
     players: Res<Players>,
     game_state: Res<State<GameState>>,
-    assets: Local<WorldAssets>,
+    assets: Res<WorldAssets>,
 ) {
     // Update the boosts
     for (box_e, mut box_v, mut image, bbox) in &mut boost_q {

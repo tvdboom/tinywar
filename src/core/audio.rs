@@ -116,7 +116,7 @@ pub fn update_audio(
     mut pause_audio_msg: MessageWriter<PauseAudioMsg>,
     mut stop_audio_msg: MessageWriter<StopAudioMsg>,
     mut mute_audio_msg: MessageWriter<MuteAudioMsg>,
-    assets: Local<WorldAssets>,
+    assets: Res<WorldAssets>,
 ) {
     for msg in change_audio_msg.read() {
         settings.audio = msg.unwrap_or(match settings.audio {
@@ -177,7 +177,7 @@ pub fn play_audio(
     mut audio_instances: ResMut<Assets<AudioInstance>>,
     settings: Res<Settings>,
     audio: Res<Audio>,
-    assets: Local<WorldAssets>,
+    assets: Res<WorldAssets>,
 ) {
     for msg in play_audio_msg.read() {
         if settings.audio != AudioState::Mute {

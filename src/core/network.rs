@@ -246,7 +246,7 @@ pub fn server_receive_message(
                     spawn_unit_msg.write(SpawnUnitMsg::new(settings.enemy_color, unit));
                 },
                 ClientMessage::ActivateBoost(boost) => {
-                    activate_boost_msg.write(ActivateBoostMsg::new(settings.enemy_color, boost));
+                    activate_boost_msg.write(ActivateBoostMsg::new(boost, settings.enemy_color));
                 },
             }
         }

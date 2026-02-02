@@ -114,6 +114,11 @@ impl SelectedBoost {
             timer: Timer::new(Duration::from_secs(name.duration()), TimerMode::Once),
         }
     }
+
+    pub fn active(mut self) -> Self {
+        self.active = true;
+        self
+    }
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

@@ -36,7 +36,7 @@ pub fn update_units(
     >,
     children_q: Query<&Children>,
     players: Res<Players>,
-    assets: Local<WorldAssets>,
+    assets: Res<WorldAssets>,
 ) {
     // Collect positions and health and for all units and buildings
     let units: HashMap<Entity, (Vec3, Unit)> =
@@ -183,7 +183,7 @@ pub fn update_buildings(
     mut despawn_msg: MessageWriter<DespawnMsg>,
     settings: Res<Settings>,
     time: Res<Time>,
-    assets: Local<WorldAssets>,
+    assets: Res<WorldAssets>,
 ) {
     for (building_e, _, destroy, building) in &mut building_q {
         let b_size = building.name.size();

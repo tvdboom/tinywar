@@ -51,6 +51,7 @@ use {
     crate::core::persistence::{load_game, save_game, LoadGameMsg, SaveGameMsg},
     bevy_renet::renet::{RenetClient, RenetServer},
 };
+use crate::core::assets::WorldAssets;
 
 pub struct GamePlugin;
 
@@ -99,6 +100,7 @@ impl Plugin for GamePlugin {
             .add_message::<ExplosionMsg>()
             // Resources
             .insert_resource(ClearColor(WATER_COLOR))
+            .init_resource::<WorldAssets>()
             .init_resource::<PlayingAudio>()
             .init_resource::<Settings>()
             .init_resource::<Map>();

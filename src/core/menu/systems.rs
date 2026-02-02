@@ -35,7 +35,7 @@ pub fn setup_menu(
     #[cfg(not(target_arch = "wasm32"))] server: Option<Res<RenetServer>>,
     settings: Res<Settings>,
     #[cfg(not(target_arch = "wasm32"))] ip: Res<Ip>,
-    assets: Local<WorldAssets>,
+    assets: Res<WorldAssets>,
     window: Single<&Window>,
 ) {
     commands
@@ -268,7 +268,7 @@ pub fn update_ip(
 pub fn setup_game_menu(
     mut commands: Commands,
     host: Option<Res<Host>>,
-    assets: Local<WorldAssets>,
+    assets: Res<WorldAssets>,
     window: Single<&Window>,
 ) {
     commands.spawn((add_root_node(true), MenuCmp)).with_children(|parent| {
@@ -289,7 +289,7 @@ pub fn setup_game_settings(
     mut commands: Commands,
     host: Option<Res<Host>>,
     settings: Res<Settings>,
-    assets: Local<WorldAssets>,
+    assets: Res<WorldAssets>,
     window: Single<&Window>,
 ) {
     commands.spawn((add_root_node(true), MenuCmp)).with_children(|parent| {

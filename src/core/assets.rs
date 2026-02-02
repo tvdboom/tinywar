@@ -23,6 +23,7 @@ pub struct AtlasInfo {
     pub last_index: usize,
 }
 
+#[derive(Resource)]
 pub struct WorldAssets {
     pub audio: HashMap<&'static str, Handle<AudioSource>>,
     pub fonts: HashMap<&'static str, Handle<Font>>,
