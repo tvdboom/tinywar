@@ -196,11 +196,7 @@ impl Player {
             strategy_timer: timer,
             queue: VecDeque::new(),
             queue_default: UnitName::default(),
-            boosts: vec![
-                SelectedBoost::new(Boost::Snakes),
-                SelectedBoost::new(Boost::Castle),
-                SelectedBoost::new(Boost::QueueTurtles),
-            ],
+            boosts: vec![],
         }
     }
 
@@ -215,6 +211,7 @@ impl Player {
     pub fn can_queue(&self, unit: UnitName) -> bool {
         unit.is_basic_unit()
             || (unit == UnitName::Bear && self.has_boost(Boost::QueueBears))
+            || (unit == UnitName::Goblin && self.has_boost(Boost::QueueGoblins))
             || (unit == UnitName::Hammerhead && self.has_boost(Boost::QueueHammerheads))
             || (unit == UnitName::Minotaur && self.has_boost(Boost::QueueMinotaurs))
             || (unit == UnitName::Shark && self.has_boost(Boost::QueueSharks))

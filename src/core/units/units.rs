@@ -18,6 +18,8 @@ pub enum UnitName {
     Archer,
     Priest,
     Bear,
+    Gnome,
+    Goblin,
     Hammerhead,
     Minotaur,
     Shark,
@@ -53,6 +55,12 @@ impl UnitName {
             UnitName::Bear => {
                 "A massive forest bully that crushes enemies with its enormous, powerful claws. \
                 Bears are often summoned by priests to defend them in close combat."
+            },
+            UnitName::Gnome => {
+                "A small and fragile magical creature that attacks with a wooden hammer."
+            },
+            UnitName::Goblin => {
+                "A bad-tempered goblin that uses its spear to pierce through any armor."
             },
             UnitName::Hammerhead => {
                 "A magical sea creature that strikes with a heavy oar, as surprising as it is \
@@ -95,7 +103,7 @@ impl UnitName {
     pub fn size(&self) -> f32 {
         match self {
             UnitName::Lancer | UnitName::Minotaur | UnitName::Turtle => 320.,
-            UnitName::Bear => 256.,
+            UnitName::Bear | UnitName::Goblin => 256.,
             _ => UNIT_DEFAULT_SIZE,
         }
     }
@@ -131,6 +139,18 @@ impl UnitName {
                 Action::Idle => 8,
                 Action::Run => 5,
                 Action::Attack(_) => 9,
+                _ => 0,
+            },
+            UnitName::Gnome => match action {
+                Action::Idle => 8,
+                Action::Run => 6,
+                Action::Attack(_) => 7,
+                _ => 0,
+            },
+            UnitName::Goblin => match action {
+                Action::Idle => 7,
+                Action::Run => 6,
+                Action::Attack(_) => 8,
                 _ => 0,
             },
             UnitName::Hammerhead => match action {
@@ -204,6 +224,8 @@ impl UnitName {
             UnitName::Archer => 3300,
             UnitName::Priest => 3400,
             UnitName::Bear => 3400,
+            UnitName::Gnome => 1000,
+            UnitName::Goblin => 2000,
             UnitName::Hammerhead => 1900,
             UnitName::Minotaur => 8900,
             UnitName::Shark => 3500,
@@ -221,6 +243,8 @@ impl UnitName {
             UnitName::Archer => 25.,
             UnitName::Priest => 25.,
             UnitName::Bear => 40.,
+            UnitName::Gnome => 40.,
+            UnitName::Goblin => 35.,
             UnitName::Hammerhead => 35.,
             UnitName::Minotaur => 25.,
             UnitName::Shark => 25.,
@@ -255,6 +279,8 @@ impl UnitName {
             UnitName::Archer => 60.,
             UnitName::Priest => 40.,
             UnitName::Bear => 200.,
+            UnitName::Gnome => 60.,
+            UnitName::Goblin => 100.,
             UnitName::Hammerhead => 100.,
             UnitName::Minotaur => 200.,
             UnitName::Shark => 60.,
@@ -272,6 +298,8 @@ impl UnitName {
             UnitName::Archer => 10.,
             UnitName::Priest => -30., // This is the healing done (negative damage)
             UnitName::Bear => 20.,
+            UnitName::Gnome => 7.,
+            UnitName::Goblin => 15.,
             UnitName::Skull => 8.,
             UnitName::Turtle => 5.,
             _ => 0.,
@@ -298,6 +326,8 @@ impl UnitName {
             UnitName::Archer => 1.,
             UnitName::Priest => 0.,
             UnitName::Bear => 10.,
+            UnitName::Gnome => 1.,
+            UnitName::Goblin => 4.,
             UnitName::Hammerhead => 3.,
             UnitName::Minotaur => 12.,
             UnitName::Shark => 0.,
@@ -315,6 +345,8 @@ impl UnitName {
             UnitName::Archer => 0.,
             UnitName::Priest => 12.,
             UnitName::Bear => 6.,
+            UnitName::Gnome => 1.,
+            UnitName::Goblin => 4.,
             UnitName::Hammerhead => 7.,
             UnitName::Minotaur => 12.,
             UnitName::Shark => 2.,
@@ -331,6 +363,8 @@ impl UnitName {
             UnitName::Lancer => 8.,
             UnitName::Archer => 2.,
             UnitName::Bear => 9.,
+            UnitName::Gnome => 1.,
+            UnitName::Goblin => 12.,
             UnitName::Hammerhead => 8.,
             UnitName::Minotaur => 10.,
             UnitName::Shark => 5.,

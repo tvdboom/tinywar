@@ -79,29 +79,8 @@ jobs:
       - name: Build WASM
         run: make build-wasm
 
-      - name: Debug - Check docs after build
-        run: |
-          echo "=== Contents of docs/ after WASM build ==="
-          ls -la docs/
-          echo ""
-          echo "=== All files in docs/ ==="
-          find docs/ -type f
-          echo ""
-          echo "=== Check if tinywar.js exists ==="
-          test -f docs/tinywar.js && echo "✓ tinywar.js exists" || echo "✗ tinywar.js MISSING"
-          test -f docs/tinywar_bg.wasm && echo "✓ tinywar_bg.wasm exists" || echo "✗ tinywar_bg.wasm MISSING"
-
       - name: Copy assets
         run: cp -r $GITHUB_WORKSPACE/assets/ docs/assets
-
-      - name: Debug - Check docs after asset copy
-        run: |
-          echo "=== Contents of docs/ after asset copy ==="
-          ls -la docs/
-          echo ""
-          echo "=== Verify files still exist ==="
-          test -f docs/tinywar.js && echo "✓ tinywar.js exists" || echo "✗ tinywar.js MISSING"
-          test -f docs/index.html && echo "✓ index.html exists" || echo "✗ index.html MISSING"
 
       - uses: actions/configure-pages@v5
 

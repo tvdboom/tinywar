@@ -53,10 +53,13 @@ pub enum Boost {
     Castle,
     Clone,
     Conversion,
+    ConvertGoblins,
     ConvertHammerheads,
     ConvertSharks,
     DoubleQueue,
     Frozen,
+    GnomesBasic,
+    GnomesMagic,
     InstantHealing,
     InstantArmy,
     Lancer,
@@ -69,6 +72,7 @@ pub enum Boost {
     NoCollision,
     Penetration,
     QueueBears,
+    QueueGoblins,
     QueueHammerheads,
     QueueMinotaurs,
     QueueSharks,
@@ -100,10 +104,13 @@ impl Boost {
             Boost::Castle => "Upgrade your base to a castle.",
             Boost::Clone => "Clones 8 random non-attacking units of yours (in position).",
             Boost::Conversion => "Converts 5 random enemy units to your side.",
+            Boost::ConvertGoblins => "Transforms all your lancers into goblins.",
             Boost::ConvertHammerheads => "Transforms all your lancers into hammerheads.",
             Boost::ConvertSharks => "Transforms all your ground archers into sharks.",
             Boost::DoubleQueue => "Two units are queued at the same time.",
             Boost::Frozen => "All enemy units who aren't attacking stop their movement.",
+            Boost::GnomesBasic => "Convert all basic (ground) enemy units into gnomes.",
+            Boost::GnomesMagic => "Convert all magic (ground) enemy units into gnomes.",
             Boost::InstantHealing => "Instantly heal all your units to their maximum health.",
             Boost::InstantArmy => "Immediately spawn 6 random units in the base.",
             Boost::Lancer => "Increase your lancer's damage by 60%.",
@@ -116,6 +123,7 @@ impl Boost {
             Boost::NoCollision => "Your units don't collide with each other.",
             Boost::Penetration => "Increase the armor penetration of all your units with 5 points.",
             Boost::QueueBears => "Allow to add bears to the queue.",
+            Boost::QueueGoblins => "Allow to add goblins to the queue.",
             Boost::QueueHammerheads => "Allow to add hammerheads to the queue.",
             Boost::QueueMinotaurs => "Allow to add minotaurs to the queue.",
             Boost::QueueSharks => "Allow to add sharks to the queue.",
@@ -327,13 +335,18 @@ pub fn activate_boost_message(
                         u.color = player.color;
                     }
                 },
-                Boost::ConvertHammerheads => {
+                b @ Boost::ConvertGoblins | b @ Boost::ConvertHammerheads => {
+                    let unit = match b {
+                        Boost::ConvertGoblins => UnitName::Goblin,
+                        Boost::ConvertHammerheads => UnitName::Hammerhead,
+                        _ => unreachable!(),
+                    };
                     for (e, _, mut s, mut u) in unit_q.iter_mut().filter(|(_, _, _, u)| {
                         u.color == player.color && u.name == UnitName::Lancer
                     }) {
                         effect_msg.write(EffectMsg::dust(e));
-                        s.custom_size = Some(Vec2::splat(UnitName::Hammerhead.size()));
-                        u.name = UnitName::Hammerhead;
+                        s.custom_size = Some(Vec2::splat(unit.size()));
+                        u.name = unit;
                         u.action = Action::default();
                     }
                 },
@@ -345,6 +358,23 @@ pub fn activate_boost_message(
                     }) {
                         effect_msg.write(EffectMsg::dust(e));
                         u.name = UnitName::Shark;
+                        u.action = Action::default();
+                    }
+                },
+                b @ Boost::GnomesBasic | b @ Boost::GnomesMagic => {
+                    for (e, _, mut s, mut u) in unit_q.iter_mut().filter(|(_, _, _, u)| {
+                        u.color != player.color
+                            && u.on_building.is_none()
+                            && if b == Boost::GnomesBasic {
+                                u.name.is_basic_unit()
+                            } else {
+                                !u.name.is_basic_unit()
+                            }
+                    }) {
+                        effect_msg.write(EffectMsg::dust(e));
+                        s.custom_size = Some(Vec2::splat(UnitName::Gnome.size()));
+                        u.name = UnitName::Gnome;
+                        u.health = u.health / u.name.health() * UnitName::Gnome.health();
                         u.action = Action::default();
                     }
                 },

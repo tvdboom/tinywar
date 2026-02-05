@@ -108,14 +108,15 @@ fn calculate_damage(
         magic_damage *= 2.;
     }
 
-    let effective_armor = armor
+    let effective_armor = (armor
         - unit.name.armor_pen()
         - if attacker.has_boost(Boost::Penetration) {
             5.
         } else {
             0.
-        };
-    let effective_mr = magic_resist - unit.name.magic_pen();
+        })
+    .max(0.);
+    let effective_mr = (magic_resist - unit.name.magic_pen()).max(0.);
 
     let mitigate = |dmg, def| dmg * (10. / (10. + def));
 

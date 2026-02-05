@@ -29,7 +29,6 @@ bevy = { version = "0.18.0", default-features = false, features = [
     "gltf_animation",
     "hdr",
     "mesh_picking",
-    "multi_threaded",
     "png",
     "serialize",
     "smaa_luts",
@@ -58,6 +57,7 @@ image = "0.25.9"
 winit = "0.30.12"
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+bevy = { version = "0.18", default-features = false, features = ["multi_threaded"] }
 bevy_renet = "4.0.0"
 bimap = "0.6.3"
 bincode = { version = "2.0.1", features = ["serde"] }

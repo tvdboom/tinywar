@@ -1082,7 +1082,10 @@ pub fn update_ui2(
         &mut Visibility,
         (With<QueueProgressWrapperCmp>, Without<BoostBoxCmp>),
     >,
-    mut progress_inner_q: Query<&mut Node, (Without<BoostBoxCmp>, Without<SwordQueueCmp>)>,
+    mut progress_inner_q: Query<
+        &mut Node,
+        (With<QueueProgressCmp>, Without<BoostBoxCmp>, Without<SwordQueueCmp>),
+    >,
     mut speed_q: Query<
         &mut Text,
         (With<SpeedCmp>, Without<HoverBoxBoostLabelCmp>, Without<BoostBoxTimerCmp>),
@@ -1157,21 +1160,18 @@ pub fn update_ui2(
 
             // Update progress bar
             for child in children_q.iter_descendants(entity) {
-                if let Ok(mut bar_v) = progress_wrapper_q.get_mut(child) {
-                    let frac =
-                        1. - queue.timer.elapsed_secs() / queue.timer.duration().as_secs_f32();
+                let frac = 1. - queue.timer.elapsed_secs() / queue.timer.duration().as_secs_f32();
 
+                if let Ok(mut bar_v) = progress_wrapper_q.get_mut(child) {
                     *bar_v = if frac == 1. {
                         Visibility::Hidden
                     } else {
                         Visibility::Inherited
                     };
+                }
 
-                    if let Ok(mut node) = progress_inner_q.get_mut(child) {
-                        node.width = Val::Percent(95. * frac); // 95 is original length of bar
-                    }
-
-                    break;
+                if let Ok(mut node) = progress_inner_q.get_mut(child) {
+                    node.width = Val::Percent(95. * frac); // 95 is original length of bar
                 }
             }
         }
