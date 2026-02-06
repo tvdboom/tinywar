@@ -50,7 +50,7 @@ jobs:
           path: .
 
       - name: Push to itch.io
-        uses: ./.github
+        uses: ./.github/actions/butler
         env:
           BUTLER_CREDENTIALS: ${{ secrets.BUTLER_CREDENTIALS }}
           CHANNEL: windows
@@ -93,7 +93,7 @@ jobs:
         uses: actions/deploy-pages@v4.0.5
 
       - name: Push to itch.io
-        uses: ./.github
+        uses: ./.github/actions/butler
         env:
           BUTLER_CREDENTIALS: ${{ secrets.BUTLER_CREDENTIALS }}
           ITCH_USER: tvdboom
