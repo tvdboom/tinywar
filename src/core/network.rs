@@ -109,13 +109,13 @@ impl ClientMessage {
 
 pub fn local_ip() -> IpAddr {
     if cfg!(target_arch = "wasm32") {
+        // WebAssembly in browsers cannot access local network interfaces
+        "127.0.0.1".parse().unwrap()
+    } else {
         let socket = UdpSocket::bind("0.0.0.0:0").expect("Socket not found.");
 
         socket.connect("8.8.8.8:80").expect("Failed to connect to socket.");
         socket.local_addr().ok().map(|addr| addr.ip()).unwrap()
-    } else {
-        // WebAssembly in browsers cannot access local network interfaces
-        "127.0.0.1".parse().unwrap()
     }
 }
 
