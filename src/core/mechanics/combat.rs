@@ -155,7 +155,6 @@ fn calculate_damage(
         UnitName::Warrior if attacker.has_boost(Boost::Warrior) => 1.5,
         UnitName::Lancer if attacker.has_boost(Boost::Lancer) => 1.6,
         UnitName::Archer if attacker.has_boost(Boost::Arrows) => 1.3,
-        UnitName::Priest if attacker.has_boost(Boost::Meditation) => 1.7,
         _ => 1.,
     };
 
@@ -225,8 +224,16 @@ pub fn resolve_attack(
                             (0., 0., true) // Buildings have no armor nor magic resist
                         };
 
-                        let damage =
-                            calculate_damage(unit, armor, mr, is_building, attacker, defender);
+                        let damage = if unit.name == UnitName::Priest {
+                            unit.name.physical_damage()
+                                * if attacker.has_boost(Boost::Meditation) {
+                                    1.7
+                                } else {
+                                    1.0
+                                }
+                        } else {
+                            calculate_damage(unit, armor, mr, is_building, attacker, defender)
+                        };
 
                         if let Some(projectile) = unit.name.projectile() {
                             // These units don't apply damage but spawn projectiles at the end of the animation

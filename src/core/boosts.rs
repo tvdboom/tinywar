@@ -339,6 +339,7 @@ pub fn activate_boost_message(
                     {
                         effect_msg.write(EffectMsg::dust(e));
                         u.color = player.color;
+                        u.action = Action::Idle; // Reset action to stop attacking own units
                     }
                 },
                 b @ Boost::ConvertGoblins | b @ Boost::ConvertHammerheads => {

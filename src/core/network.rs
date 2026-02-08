@@ -114,8 +114,12 @@ pub fn local_ip() -> IpAddr {
     } else {
         let socket = UdpSocket::bind("0.0.0.0:0").expect("Socket not found.");
 
-        socket.connect("8.8.8.8:80").expect("Failed to connect to socket.");
-        socket.local_addr().ok().map(|addr| addr.ip()).unwrap()
+        if socket.connect("8.8.8.8:80").is_ok() {
+            // Fails if not connected to internet
+            "127.0.0.1".parse().unwrap()
+        } else {
+            socket.local_addr().ok().map(|addr| addr.ip()).unwrap()
+        }
     }
 }
 

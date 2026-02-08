@@ -87,8 +87,8 @@ pub struct StrategyProgressWrapperCmp;
 #[derive(Component)]
 pub struct StrategyProgressCmp;
 
-#[derive(Component, Deref)]
-pub struct ShopLabelCmp(pub UnitName);
+#[derive(Component)]
+pub struct ShopLabelCmp;
 
 #[derive(Component, Deref)]
 pub struct SwordQueueCmp(pub usize);
@@ -469,7 +469,7 @@ pub fn draw_ui(
                                         ..default()
                                     },
                                     add_text("0", "bold", 12., &assets, &window),
-                                    ShopLabelCmp(unit),
+                                    ShopLabelCmp,
                                 ),
                                 (
                                     Node {
@@ -1102,10 +1102,10 @@ pub fn update_ui(
     >,
     mut text_q: Query<&mut Text, With<TextAdvanceBannerCmp>>,
     mut btn_q: Query<
-        (&mut Node, &mut ImageNode, &mut ShopButtonCmp),
+        (Entity, &mut Node, &mut ImageNode, &mut ShopButtonCmp),
         (Without<DirectionCmp>, Without<AdvanceBannerCmp>),
     >,
-    mut label_q: Query<(&mut Text, &ShopLabelCmp), Without<TextAdvanceBannerCmp>>,
+    mut label_q: Query<&mut Text, (With<ShopLabelCmp>, Without<TextAdvanceBannerCmp>)>,
     strategy_q: Query<(Entity, &StrategyButtonCmp)>,
     mut wrapper_q: Query<&mut Visibility, With<StrategyProgressWrapperCmp>>,
     mut progress_q: Query<
@@ -1169,21 +1169,25 @@ pub fn update_ui(
     }
 
     // Update the shop
-    if let Some((mut node, mut image, mut btn)) = btn_q.iter_mut().find(|(_, _, b)| !b.is_basic) {
-        node.display = if let Some(unit) =
-            UnitName::iter().find(|u| !u.is_basic_unit() && players.me.can_queue(*u))
-        {
-            image.image =
-                assets.image(format!("{}-{}", players.me.color.to_name(), unit.to_name()));
-            btn.unit = unit;
-            Display::Flex
-        } else {
-            Display::None
+    for (btn_e, mut node, mut image, mut btn) in &mut btn_q {
+        if !btn.is_basic {
+            node.display = if let Some(unit) =
+                UnitName::iter().find(|u| !u.is_basic_unit() && players.me.can_queue(*u))
+            {
+                image.image =
+                    assets.image(format!("{}-{}", players.me.color.to_name(), unit.to_name()));
+                btn.unit = unit;
+                Display::Flex
+            } else {
+                Display::None
+            }
         }
-    }
 
-    for (mut text, label) in label_q.iter_mut() {
-        text.0 = counts.get(&*label).unwrap_or(&0).to_string();
+        for child in children_q.iter_descendants(btn_e) {
+            if let Ok(mut text) = label_q.get_mut(child) {
+                text.0 = counts.get(&btn.unit).unwrap_or(&0).to_string();
+            }
+        }
     }
 
     // Update the direction
