@@ -7,7 +7,6 @@ use bevy::asset::AssetServer;
 use bevy::prelude::*;
 use bevy_kira_audio::AudioSource;
 use std::collections::HashMap;
-use std::path::Path;
 use strum::IntoEnumIterator;
 
 #[derive(Clone)]
@@ -199,7 +198,7 @@ impl FromWorld for WorldAssets {
                         action.to_name()
                     );
 
-                    if Path::new(&path).exists() {
+                    if unit.frames(action.to_action()) > 0 {
                         let name = Box::leak(Box::new(format!(
                             "{}-{}-{}",
                             color.to_name(),
