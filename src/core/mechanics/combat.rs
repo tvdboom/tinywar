@@ -47,10 +47,7 @@ impl Projectile {
     }
 
     pub fn animation(&self) -> bool {
-        match self {
-            Projectile::Bone | Projectile::Magic => true,
-            _ => false,
-        }
+        matches!(self, Projectile::Bone | Projectile::Magic)
     }
 
     pub fn mode(&self) -> ProjectileMode {

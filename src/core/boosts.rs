@@ -159,7 +159,7 @@ impl Boost {
             Boost::Castle => !buildings.any(|b| b.name == BuildingName::Castle),
             Boost::Tower => buildings.filter(|b| b.name == BuildingName::Tower).count() < 2,
             a if a.to_name().starts_with("Queue") => {
-                player.boosts.iter().map(|b| b.name.to_name().starts_with("Queue")).count() == 0
+                player.boosts.iter().filter(|b| b.name.to_name().starts_with("Queue")).count() == 0
             },
             _ => true,
         }
