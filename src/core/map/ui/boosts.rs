@@ -42,7 +42,7 @@ pub fn setup_boost_selection(
             .collect()
     };
 
-    let own_boosts = boosts(&players.me, &building_q).into_iter().choose_multiple(&mut rng(), 3);
+    let own_boosts = boosts(&players.me, &building_q).into_iter().sample(&mut rng(), 3);
 
     // Select a random boost for the NPC
     let enemy_boost = if settings.game_mode == GameMode::SinglePlayer {

@@ -318,7 +318,7 @@ pub fn activate_boost_message(
                                 && u.on_building.is_none()
                                 && !matches!(u.action, Action::Attack(_))
                         })
-                        .choose_multiple(&mut rng, 8)
+                        .sample(&mut rng, 8)
                     {
                         spawn_unit_msg.write(SpawnUnitMsg {
                             color: player.color,
@@ -335,7 +335,7 @@ pub fn activate_boost_message(
                     for (e, _, _, mut u) in unit_q
                         .iter_mut()
                         .filter(|(_, _, _, u)| u.color != player.color && u.on_building.is_none())
-                        .choose_multiple(&mut rng, 5)
+                        .sample(&mut rng, 5)
                     {
                         effect_msg.write(EffectMsg::dust(e));
                         u.color = player.color;
@@ -390,7 +390,7 @@ pub fn activate_boost_message(
                     .filter(|(_, _, _, u)| u.color == player.color)
                     .for_each(|(_, _, _, mut u)| u.health = u.name.health()),
                 Boost::InstantArmy => {
-                    for unit in UnitName::iter().choose_multiple(&mut rng, 6) {
+                    for unit in UnitName::iter().sample(&mut rng, 6) {
                         spawn_unit_msg.write(SpawnUnitMsg {
                             color: player.color,
                             unit,
@@ -453,7 +453,7 @@ pub fn activate_boost_message(
                         .lanes
                         .iter()
                         .flat_map(|(l, v)| v[3..v.len() - 3].iter().map(|t| (*l, *t)))
-                        .choose_multiple(&mut rng, amount)
+                        .sample(&mut rng, amount)
                     {
                         spawn_unit_msg.write(SpawnUnitMsg {
                             color: player.color,

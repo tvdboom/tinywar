@@ -1,25 +1,307 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="30" height="16" tilewidth="64" tileheight="64" infinite="0" nextlayerid="11" nextobjectid="1">
- <tileset firstgid="1" source="tiles1.tsx"/>
- <tileset firstgid="55" source="tiles3.tsx"/>
- <tileset firstgid="109" source="tiles2.tsx"/>
- <tileset firstgid="163" source="foam.tsx"/>
- <tileset firstgid="179" source="Water Rocks_01.tsx"/>
- <tileset firstgid="195" source="Water Rocks_02.tsx"/>
- <tileset firstgid="211" source="Rock4.tsx"/>
- <tileset firstgid="212" source="Rock1.tsx"/>
- <tileset firstgid="213" source="Bushe2.tsx"/>
- <tileset firstgid="221" source="Bushe4.tsx"/>
- <tileset firstgid="229" source="Tree1.tsx"/>
- <tileset firstgid="237" source="Tree3.tsx"/>
- <tileset firstgid="245" source="Sheep_Idle.tsx"/>
- <tileset firstgid="251" source="Tree2.tsx"/>
- <tileset firstgid="259" source="Bushe1.tsx"/>
- <tileset firstgid="267" source="Stump 1.tsx"/>
- <tileset firstgid="279" source="Bushe3.tsx"/>
- <tileset firstgid="287" source="Water Rocks_03.tsx"/>
- <tileset firstgid="303" source="Water Rocks_04.tsx"/>
- <tileset firstgid="319" source="Stump 3.tsx"/>
+ <tileset firstgid="1" name="tiles1" tilewidth="64" tileheight="64" tilecount="54" columns="9">
+  <image source="images/tiles/Tilemap_color3.png" width="576" height="384"/>
+ </tileset>
+ <tileset firstgid="55" name="tiles1" tilewidth="64" tileheight="64" tilecount="54" columns="9">
+  <image source="images/tiles/Tilemap_color1.png" width="576" height="384"/>
+ </tileset>
+ <tileset firstgid="109" name="tiles2" tilewidth="64" tileheight="64" tilecount="54" columns="9">
+  <image source="images/tiles/Tilemap_color2.png" width="576" height="384"/>
+ </tileset>
+ <tileset firstgid="163" name="foam" tilewidth="192" tileheight="192" tilecount="16" columns="16">
+  <image source="images/tiles/Water Foam.png" width="3072" height="192"/>
+  <tile id="0">
+   <animation>
+    <frame tileid="0" duration="100"/>
+    <frame tileid="1" duration="100"/>
+    <frame tileid="2" duration="100"/>
+    <frame tileid="3" duration="100"/>
+    <frame tileid="4" duration="100"/>
+    <frame tileid="5" duration="100"/>
+    <frame tileid="6" duration="100"/>
+    <frame tileid="7" duration="100"/>
+    <frame tileid="8" duration="100"/>
+    <frame tileid="9" duration="100"/>
+    <frame tileid="10" duration="100"/>
+    <frame tileid="11" duration="100"/>
+    <frame tileid="12" duration="100"/>
+   </animation>
+  </tile>
+ </tileset>
+ <tileset firstgid="179" name="Water Rocks_01" tilewidth="64" tileheight="64" tilecount="16" columns="16">
+  <image source="images/decorations/Water Rocks_01.png" width="1024" height="64"/>
+  <tile id="0">
+   <animation>
+    <frame tileid="0" duration="100"/>
+    <frame tileid="1" duration="100"/>
+    <frame tileid="2" duration="100"/>
+    <frame tileid="3" duration="100"/>
+    <frame tileid="4" duration="100"/>
+    <frame tileid="5" duration="100"/>
+    <frame tileid="6" duration="100"/>
+    <frame tileid="7" duration="100"/>
+    <frame tileid="8" duration="100"/>
+    <frame tileid="9" duration="100"/>
+    <frame tileid="10" duration="100"/>
+    <frame tileid="11" duration="100"/>
+    <frame tileid="12" duration="100"/>
+    <frame tileid="13" duration="100"/>
+    <frame tileid="14" duration="100"/>
+    <frame tileid="15" duration="100"/>
+   </animation>
+  </tile>
+ </tileset>
+ <tileset firstgid="195" name="Water Rocks_02" tilewidth="64" tileheight="64" tilecount="16" columns="16">
+  <image source="images/decorations/Water Rocks_02.png" width="1024" height="64"/>
+  <tile id="0">
+   <animation>
+    <frame tileid="0" duration="100"/>
+    <frame tileid="1" duration="100"/>
+    <frame tileid="2" duration="100"/>
+    <frame tileid="3" duration="100"/>
+    <frame tileid="4" duration="100"/>
+    <frame tileid="5" duration="100"/>
+    <frame tileid="6" duration="100"/>
+    <frame tileid="7" duration="100"/>
+    <frame tileid="8" duration="100"/>
+    <frame tileid="9" duration="100"/>
+    <frame tileid="10" duration="100"/>
+    <frame tileid="11" duration="100"/>
+    <frame tileid="12" duration="100"/>
+    <frame tileid="13" duration="100"/>
+    <frame tileid="14" duration="100"/>
+    <frame tileid="15" duration="100"/>
+   </animation>
+  </tile>
+ </tileset>
+ <tileset firstgid="211" name="Rock4" tilewidth="64" tileheight="64" tilecount="1" columns="1">
+  <image source="images/decorations/Rock4.png" width="64" height="64"/>
+ </tileset>
+ <tileset firstgid="212" name="Rock1" tilewidth="64" tileheight="64" tilecount="1" columns="1">
+  <image source="images/decorations/Rock1.png" width="64" height="64"/>
+ </tileset>
+ <tileset firstgid="213" name="Bushe2" tilewidth="128" tileheight="128" tilecount="8" columns="8">
+  <image source="images/decorations/Bushe2.png" width="1024" height="128"/>
+  <tile id="0">
+   <animation>
+    <frame tileid="0" duration="100"/>
+    <frame tileid="1" duration="100"/>
+    <frame tileid="2" duration="100"/>
+    <frame tileid="3" duration="100"/>
+    <frame tileid="4" duration="100"/>
+    <frame tileid="5" duration="100"/>
+    <frame tileid="6" duration="100"/>
+    <frame tileid="7" duration="100"/>
+   </animation>
+  </tile>
+ </tileset>
+ <tileset firstgid="221" name="Bushe4" tilewidth="128" tileheight="128" tilecount="8" columns="8">
+  <image source="images/decorations/Bushe4.png" width="1024" height="128"/>
+  <tile id="0">
+   <animation>
+    <frame tileid="1" duration="100"/>
+    <frame tileid="2" duration="100"/>
+    <frame tileid="3" duration="100"/>
+    <frame tileid="4" duration="100"/>
+    <frame tileid="5" duration="100"/>
+    <frame tileid="6" duration="100"/>
+    <frame tileid="7" duration="100"/>
+   </animation>
+  </tile>
+ </tileset>
+ <tileset firstgid="229" name="Tree1" tilewidth="192" tileheight="256" tilecount="8" columns="8">
+  <image source="images/decorations/Tree1.png" width="1536" height="256"/>
+  <tile id="0">
+   <animation>
+    <frame tileid="0" duration="100"/>
+    <frame tileid="1" duration="100"/>
+    <frame tileid="2" duration="100"/>
+    <frame tileid="3" duration="100"/>
+    <frame tileid="4" duration="100"/>
+    <frame tileid="5" duration="100"/>
+    <frame tileid="6" duration="100"/>
+    <frame tileid="7" duration="100"/>
+   </animation>
+  </tile>
+ </tileset>
+ <tileset firstgid="237" name="Tree3" tilewidth="192" tileheight="192" tilecount="8" columns="8">
+  <image source="images/decorations/Tree3.png" width="1536" height="192"/>
+  <tile id="0">
+   <animation>
+    <frame tileid="0" duration="100"/>
+    <frame tileid="1" duration="100"/>
+    <frame tileid="2" duration="100"/>
+    <frame tileid="3" duration="100"/>
+    <frame tileid="4" duration="100"/>
+    <frame tileid="5" duration="100"/>
+    <frame tileid="6" duration="100"/>
+    <frame tileid="7" duration="100"/>
+   </animation>
+  </tile>
+ </tileset>
+ <tileset firstgid="245" name="Sheep_Idle" tilewidth="128" tileheight="128" tilecount="6" columns="6">
+  <image source="images/decorations/Sheep_Idle.png" width="768" height="128"/>
+  <tile id="0">
+   <animation>
+    <frame tileid="0" duration="100"/>
+    <frame tileid="1" duration="100"/>
+    <frame tileid="2" duration="100"/>
+    <frame tileid="3" duration="100"/>
+    <frame tileid="4" duration="100"/>
+    <frame tileid="5" duration="100"/>
+   </animation>
+  </tile>
+ </tileset>
+ <tileset firstgid="251" name="Tree2" tilewidth="192" tileheight="256" tilecount="8" columns="8">
+  <image source="images/decorations/Tree2.png" width="1536" height="256"/>
+  <tile id="0">
+   <animation>
+    <frame tileid="0" duration="100"/>
+    <frame tileid="1" duration="100"/>
+    <frame tileid="2" duration="100"/>
+    <frame tileid="3" duration="100"/>
+    <frame tileid="4" duration="100"/>
+    <frame tileid="5" duration="100"/>
+    <frame tileid="6" duration="100"/>
+    <frame tileid="7" duration="100"/>
+   </animation>
+  </tile>
+ </tileset>
+ <tileset firstgid="259" name="Bushe1" tilewidth="128" tileheight="128" tilecount="8" columns="8">
+  <image source="images/decorations/Bushe1.png" width="1024" height="128"/>
+  <tile id="0">
+   <animation>
+    <frame tileid="0" duration="100"/>
+    <frame tileid="1" duration="100"/>
+    <frame tileid="2" duration="100"/>
+    <frame tileid="3" duration="100"/>
+    <frame tileid="4" duration="100"/>
+    <frame tileid="5" duration="100"/>
+    <frame tileid="6" duration="100"/>
+    <frame tileid="7" duration="100"/>
+   </animation>
+  </tile>
+ </tileset>
+ <tileset firstgid="267" name="Stump 1" tilewidth="64" tileheight="64" tilecount="12" columns="3">
+  <image source="images/decorations/Stump 1.png" width="192" height="256"/>
+ </tileset>
+ <tileset firstgid="279" name="Bushe3" tilewidth="128" tileheight="128" tilecount="8" columns="8">
+  <image source="images/decorations/Bushe3.png" width="1024" height="128"/>
+  <tile id="0">
+   <animation>
+    <frame tileid="0" duration="100"/>
+    <frame tileid="1" duration="100"/>
+    <frame tileid="2" duration="100"/>
+    <frame tileid="3" duration="100"/>
+    <frame tileid="4" duration="100"/>
+    <frame tileid="5" duration="100"/>
+    <frame tileid="6" duration="100"/>
+    <frame tileid="7" duration="100"/>
+   </animation>
+  </tile>
+ </tileset>
+ <tileset firstgid="287" name="Water Rocks_03" tilewidth="64" tileheight="64" tilecount="16" columns="16">
+  <image source="images/decorations/Water Rocks_03.png" width="1024" height="64"/>
+  <tile id="0">
+   <animation>
+    <frame tileid="0" duration="100"/>
+    <frame tileid="1" duration="100"/>
+    <frame tileid="2" duration="100"/>
+    <frame tileid="3" duration="100"/>
+    <frame tileid="4" duration="100"/>
+    <frame tileid="5" duration="100"/>
+    <frame tileid="6" duration="100"/>
+    <frame tileid="7" duration="100"/>
+    <frame tileid="8" duration="100"/>
+    <frame tileid="9" duration="100"/>
+    <frame tileid="10" duration="100"/>
+    <frame tileid="11" duration="100"/>
+    <frame tileid="12" duration="100"/>
+    <frame tileid="13" duration="100"/>
+    <frame tileid="14" duration="100"/>
+    <frame tileid="15" duration="100"/>
+   </animation>
+  </tile>
+ </tileset>
+ <tileset firstgid="303" name="Water Rocks_04" tilewidth="64" tileheight="64" tilecount="16" columns="16">
+  <image source="images/decorations/Water Rocks_04.png" width="1024" height="64"/>
+  <tile id="0">
+   <animation>
+    <frame tileid="0" duration="100"/>
+    <frame tileid="1" duration="100"/>
+    <frame tileid="2" duration="100"/>
+    <frame tileid="3" duration="100"/>
+    <frame tileid="4" duration="100"/>
+    <frame tileid="5" duration="100"/>
+    <frame tileid="6" duration="100"/>
+    <frame tileid="7" duration="100"/>
+    <frame tileid="8" duration="100"/>
+    <frame tileid="9" duration="100"/>
+    <frame tileid="10" duration="100"/>
+    <frame tileid="11" duration="100"/>
+    <frame tileid="12" duration="100"/>
+    <frame tileid="13" duration="100"/>
+    <frame tileid="14" duration="100"/>
+    <frame tileid="15" duration="100"/>
+   </animation>
+  </tile>
+ </tileset>
+ <tileset firstgid="319" name="Stump 3" tilewidth="64" tileheight="64" tilecount="12" columns="3">
+  <image source="images/decorations/Stump 3.png" width="192" height="256"/>
+ </tileset>
+ <tileset firstgid="331" name="tiles1" tilewidth="64" tileheight="64" tilecount="54" columns="9">
+  <image source="images/tiles/Tilemap_color1.png" width="576" height="384"/>
+ </tileset>
+ <tileset firstgid="385" name="foam" tilewidth="192" tileheight="192" tilecount="16" columns="16">
+  <image source="images/tiles/Water Foam.png" width="3072" height="192"/>
+  <tile id="0">
+   <animation>
+    <frame tileid="0" duration="100"/>
+    <frame tileid="1" duration="100"/>
+    <frame tileid="2" duration="100"/>
+    <frame tileid="3" duration="100"/>
+    <frame tileid="4" duration="100"/>
+    <frame tileid="5" duration="100"/>
+    <frame tileid="6" duration="100"/>
+    <frame tileid="7" duration="100"/>
+    <frame tileid="8" duration="100"/>
+    <frame tileid="9" duration="100"/>
+    <frame tileid="10" duration="100"/>
+    <frame tileid="11" duration="100"/>
+    <frame tileid="12" duration="100"/>
+   </animation>
+  </tile>
+ </tileset>
+ <tileset firstgid="401" name="foam" tilewidth="192" tileheight="192" tilecount="16" columns="16">
+  <image source="images/tiles/Water Foam.png" width="3072" height="192"/>
+  <tile id="0">
+   <animation>
+    <frame tileid="0" duration="100"/>
+    <frame tileid="1" duration="100"/>
+    <frame tileid="2" duration="100"/>
+    <frame tileid="3" duration="100"/>
+    <frame tileid="4" duration="100"/>
+    <frame tileid="5" duration="100"/>
+    <frame tileid="6" duration="100"/>
+    <frame tileid="7" duration="100"/>
+    <frame tileid="8" duration="100"/>
+    <frame tileid="9" duration="100"/>
+    <frame tileid="10" duration="100"/>
+    <frame tileid="11" duration="100"/>
+    <frame tileid="12" duration="100"/>
+   </animation>
+  </tile>
+ </tileset>
+ <tileset firstgid="417" name="Stump 1" tilewidth="64" tileheight="64" tilecount="12" columns="3">
+  <image source="images/decorations/Stump 1.png" width="192" height="256"/>
+ </tileset>
+ <tileset firstgid="429" name="Stump 3" tilewidth="64" tileheight="64" tilecount="12" columns="3">
+  <image source="images/decorations/Stump 3.png" width="192" height="256"/>
+ </tileset>
+ <tileset firstgid="441" name="tiles1" tilewidth="64" tileheight="64" tilecount="54" columns="9">
+  <image source="images/tiles/Tilemap_color3.png" width="576" height="384"/>
+ </tileset>
  <layer id="4" name="foam" width="30" height="16">
   <data encoding="csv">
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
