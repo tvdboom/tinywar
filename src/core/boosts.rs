@@ -135,7 +135,7 @@ impl Boost {
             Boost::QueueSkulls => "Allow to add skulls to the queue.",
             Boost::QueueTurtles => "Allow to add turtles to the queue.",
             Boost::Repair => "Instantly repair all your buildings to their maximum health.",
-            Boost::Respawn => "Respawn all dead units on buildings.",
+            Boost::Respawn => "Respawn all units on buildings.",
             Boost::Run => "Increase the speed of all your units by 100%.",
             Boost::SharkTower => "Convert all your units on buildings into sharks.",
             Boost::Siege => "Increase all damage to buildings by 50%.",
@@ -417,27 +417,24 @@ pub fn activate_boost_message(
                     .filter(|(_, _, b)| b.color == player.color)
                     .for_each(|(_, _, mut b)| b.health = b.name.health()),
                 Boost::Respawn => {
-                    let current_positions: Vec<Vec2> = unit_q
+                    unit_q
                         .iter()
-                        .filter_map(|(_, t, _, u)| {
-                            (u.color == player.color && u.on_building.is_some())
-                                .then_some(t.translation.truncate())
-                        })
-                        .collect();
+                        .filter(|(_, _, _, u)| u.color == player.color && u.on_building.is_some())
+                        .for_each(|(e, _, _, _)| {
+                            despawn_msg.write(DespawnMsg(e));
+                        });
 
                     for (e, t, b) in building_q.iter().filter(|(_, _, b)| b.color == player.color) {
                         for pos in b.name.units() {
-                            if !current_positions.contains(&pos) {
-                                spawn_unit_msg.write(SpawnUnitMsg {
-                                    color: b.color,
-                                    unit: UnitName::Archer,
-                                    position: Some(t.translation.truncate() + pos),
-                                    on_building: Some(e),
-                                    lane: None,
-                                    dust_effect: true,
-                                    entity: None,
-                                });
-                            }
+                            spawn_unit_msg.write(SpawnUnitMsg {
+                                color: b.color,
+                                unit: UnitName::Archer,
+                                position: Some(t.translation.truncate() + pos),
+                                on_building: Some(e),
+                                lane: None,
+                                dust_effect: true,
+                                entity: None,
+                            });
                         }
                     }
                 },

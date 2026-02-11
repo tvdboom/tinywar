@@ -7,6 +7,7 @@ use crate::core::constants::MAX_BOOSTS;
 use crate::core::mechanics::effects::{Effect, EffectMsg};
 use crate::core::mechanics::spawn::SpawnUnitMsg;
 use crate::core::menu::buttons::LobbyTextCmp;
+use crate::core::menu::systems::Host;
 use crate::core::multiplayer::{EntityMap, Population, UpdatePopulationMsg};
 use crate::core::player::{Player, Players, SelectedBoost, Side, Strategy};
 use crate::core::settings::{GameMode, PlayerColor, Settings};
@@ -20,7 +21,6 @@ use bevy_renet::*;
 use bincode::config::standard;
 use bincode::serde::{decode_from_slice, encode_to_vec};
 use serde::{Deserialize, Serialize};
-use crate::core::menu::systems::Host;
 
 const PROTOCOL_ID: u64 = 7;
 
